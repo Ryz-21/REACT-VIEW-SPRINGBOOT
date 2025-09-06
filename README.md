@@ -49,6 +49,7 @@ Este proyecto está pensado como un ejemplo realista de un sistema empresarial d
 ## 🗂️ Estructura del proyecto
 
 ### 📂 Backend
+```
 backend/
 └── src/main/java/com/tuecommerce/backend
 ├── config/ → SecurityConfig, DBConfig
@@ -59,8 +60,9 @@ backend/
 ├── repository/ → UsuarioRepository, EmpleadoRepository
 ├── service/ → EmpleadoService, UsuarioService
 └── BackendApplication.java
-
+```
 ### 📂 Frontend
+```
 frontend/
 └── src/
 ├── components/
@@ -98,7 +100,7 @@ frontend/
 │
 ├── App.js
 └── index.js
-
+```
 
 ---
 
@@ -148,6 +150,8 @@ CREATE TABLE reportes (
     FOREIGN KEY (id_empleado) REFERENCES empleados(id_empleado),
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
+```
+
 📊 Funcionalidades
 
 🔑 Login seguro para administradores.
@@ -162,12 +166,13 @@ CREATE TABLE reportes (
 
 🚀 Cómo ejecutar
 Backend
-
+```
 cd backend
 mvn spring-boot:run
-
+```
 Frontend
-
+```
 cd frontend
 npm install
 npm run dev
+```
