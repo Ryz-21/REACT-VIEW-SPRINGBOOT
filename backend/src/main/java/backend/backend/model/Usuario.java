@@ -2,8 +2,6 @@ package backend.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,6 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Usuario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idUsuario;
@@ -23,17 +22,20 @@ public class Usuario {
     @Column(nullable = false)
     private String password;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
     private Rol rol = Rol.USER;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean estado = true;
 
+    @Builder.Default
     @Column(name = "creado_en", updatable = false)
     private LocalDateTime creadoEn = LocalDateTime.now();
 
-   public enum Rol {
+    public enum Rol {
         ADMIN, USER
     }
 }
