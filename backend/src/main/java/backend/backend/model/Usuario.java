@@ -1,8 +1,19 @@
 package backend.backend.model;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuarios")
@@ -17,10 +28,10 @@ public class Usuario {
     private Integer idUsuario;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String username;
+    private String Username;
 
     @Column(nullable = false)
-    private String password;
+    private String Password;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

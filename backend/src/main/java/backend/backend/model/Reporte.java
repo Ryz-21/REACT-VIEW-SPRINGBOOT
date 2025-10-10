@@ -1,5 +1,6 @@
 package backend.backend.model;
 
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -10,16 +11,20 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class Reporte {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idReporte;
 
     @Column(length = 50)
-    private String TipoReporte;
+    private String Titulo;
+
+    @Column(length = 50)
+    private String Descripcion;
 
     @Column(nullable = false)
-    private LocalDateTime fechaGeneracion = LocalDateTime.now();
+    private LocalDateTime FechaCreacion = LocalDateTime.now();
 
      // Relaciones
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,6 +37,7 @@ public class Reporte {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_departamento")
+    
     private Departamento departamento;
 }
 
