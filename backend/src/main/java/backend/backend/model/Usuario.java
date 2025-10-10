@@ -25,13 +25,13 @@ public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idUsuario;
+    private Long idUsuario;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String Username;
+    private String username;
 
     @Column(nullable = false)
-    private String Password;
+    private String password;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

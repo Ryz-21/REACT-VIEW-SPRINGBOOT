@@ -1,8 +1,10 @@
 package backend.backend.repository;
 
-import backend.backend.model.Usuario;
-import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import backend.backend.model.Usuario;
 
 //jpa es una interfaz que permite hacer operaciones basicas de base de datos
 //repositorio es una interfaz que permite hacer operaciones mas avanzadas de base de datos

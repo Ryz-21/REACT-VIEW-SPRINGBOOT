@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 public class Empleado {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idEmpleado;
+    private Long idEmpleado;
     @Column(nullable = false, length = 100)
     private String Nombres;
     @Column(length = 100)
