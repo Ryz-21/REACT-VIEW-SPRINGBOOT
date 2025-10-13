@@ -35,6 +35,7 @@ public class Usuario {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
+    
     @Column(length = 10)
     private Rol rol = Rol.USER;
 

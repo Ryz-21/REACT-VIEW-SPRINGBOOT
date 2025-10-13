@@ -1,15 +1,24 @@
 package backend.backend.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import backend.backend.model.Empleado;
-import backend.backend.repository.EmpleadoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import backend.backend.dto.EmpleadoResponse;
+import backend.backend.model.Empleado;
+import backend.backend.repository.EmpleadoRepository;
 
 @RestController//indica que es un controlador rest
 @RequestMapping("/api/empleados")//ruta base para acceder a los endpoints
@@ -18,10 +27,25 @@ import java.util.Optional;
 public class EmpleadoController {
     @Autowired//inyeccion de dependencias
     private EmpleadoRepository empleadoRepository;
+    
     //1. Listar todos los empleados
     @GetMapping
-    public List<Empleado> listarEmpleados(){
-        return empleadoRepository.findAll();
+    public List<EmpleadoResponse> listarEmpleado(){
+        return empleadoRepository.findAll()
+                .stream()
+                .map(e->new EmpleadoResponse(
+                        e.getIdEmpleado(),
+                        e.getNombres(),
+                        e.getApellidos(),
+                        e.getDni(),
+                        e.getTelefono(),
+                        e.getEmail(),
+                        e.getDireccion(),
+                        e.getFechaIngreso(),
+                        e.getFechaSalida(),
+                        e.getDepartamento().getIdDepartamento()
+                ))
+                .collect(Collectors.toList());
     }
     //2. Listar empleado por ID
     @GetMapping("/{id}")
