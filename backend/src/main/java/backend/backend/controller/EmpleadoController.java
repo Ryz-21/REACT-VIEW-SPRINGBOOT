@@ -49,34 +49,74 @@ public class EmpleadoController {
     }
     //2. Listar empleado por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Empleado> obtenerEmpleadoPorId(@PathVariable Long id){
+    public ResponseEntity<EmpleadoResponse> obtenerEmpleadoPorId(@PathVariable Long id){
         Optional<Empleado> empleado=empleadoRepository.findById(id);
-        return empleado.map(ResponseEntity::ok)
-                .orElseGet(()->ResponseEntity.notFound().build());
+        return empleado.map(e->ResponseEntity.ok(
+                new EmpleadoResponse(
+                        e.getIdEmpleado(),
+                        e.getNombres(),
+                        e.getApellidos(),
+                        e.getDni(),
+                        e.getTelefono(),
+                        e.getEmail(),
+                        e.getDireccion(),
+                        e.getFechaIngreso(),
+                        e.getFechaSalida(),
+                        e.getDepartamento().getIdDepartamento()
+                )
+        ))
+        .orElseGet(()->ResponseEntity.notFound().build());
     }
     //3. Agregar empleado
     @PostMapping//ruta para agregar un empleado
-    public ResponseEntity<Empleado> agregarEmpleado(@RequestBody Empleado empleado){
+    public ResponseEntity<EmpleadoResponse> agregarEmpleado(@RequestBody Empleado empleado){
         try{
-            Empleado nuevoEmpleado=empleadoRepository.save(empleado);
-            return ResponseEntity.ok(nuevoEmpleado);
+            Empleado nuevo=empleadoRepository.save(empleado);
+            EmpleadoResponse response=new EmpleadoResponse(
+                    nuevo.getIdEmpleado(),
+                    nuevo.getNombres(),
+                    nuevo.getApellidos(),
+                    nuevo.getDni(),
+                    nuevo.getTelefono(),
+                    nuevo.getEmail(),
+                    nuevo.getDireccion(),
+                    nuevo.getFechaIngreso(),
+                    nuevo.getFechaSalida(),
+                    nuevo.getDepartamento().getIdDepartamento()
+            );
+            return ResponseEntity.ok(response);
         }catch(Exception e){
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(500).build();
         }
     }
     //4. Modificar empleado
     @PutMapping("/{id}")//ruta para modificar un empleado
-    public ResponseEntity<Empleado> actualizarEmpleado(@PathVariable Long id,@RequestBody Empleado empleado
-    ){
+    public ResponseEntity<EmpleadoResponse> actualizarEmpleado(@PathVariable Long id,@RequestBody Empleado empleado){
         return empleadoRepository.findById(id)
-                .map(empleadoExistente->{
-                    empleadoExistente.setNombres(empleado.getNombres());
-                    empleadoExistente.setApellidos(empleado.getApellidos());
-                    empleadoExistente.setEmail(empleado.getEmail());
-                    empleadoExistente.setTelefono(empleado.getTelefono());
-                    empleadoExistente.setDepartamento(empleado.getDepartamento());
-                    Empleado actualizado=empleadoRepository.save(empleadoExistente);
-                    return ResponseEntity.ok(actualizado);
+                .map(e->{
+                    e.setNombres(empleado.getNombres());
+                    e.setApellidos(empleado.getApellidos());
+                    e.setDni(empleado.getDni());
+                    e.setTelefono(empleado.getTelefono());
+                    e.setEmail(empleado.getEmail());
+                    e.setDireccion(empleado.getDireccion());
+                    e.setFechaIngreso(empleado.getFechaIngreso());
+                    e.setFechaSalida(empleado.getFechaSalida());
+                    e.setDepartamento(empleado.getDepartamento());
+                    Empleado actualizado=empleadoRepository.save(e);
+                    EmpleadoResponse response=new EmpleadoResponse(
+                            actualizado.getIdEmpleado(),
+                            actualizado.getNombres(),
+                            actualizado.getApellidos(),
+                            actualizado.getDni(),
+                            actualizado.getTelefono(),
+                            actualizado.getEmail(),
+                            actualizado.getDireccion(),
+                            actualizado.getFechaIngreso(),
+                            actualizado.getFechaSalida(),
+                            actualizado.getDepartamento().getIdDepartamento()
+                    );
+                    return ResponseEntity.ok(response);
                 })
                 .orElseGet(()->ResponseEntity.notFound().build());
     }

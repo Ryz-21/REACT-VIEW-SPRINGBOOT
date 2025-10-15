@@ -2,6 +2,7 @@ package backend.backend.controller;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import backend.backend.dto.ReporteResponse;
 import backend.backend.model.Reporte;
 import backend.backend.repository.ReporteRepository;
 
@@ -26,11 +28,23 @@ public class ReporteController {
 
     @Autowired//inyeccion de dependencias
     private ReporteRepository reporteRepository;
+
     //1. Listar todos los reportes
-    @GetMapping
-    public List<Reporte> listarReportes(){
-        return reporteRepository.findAll();
-    }
+  @GetMapping
+public List<ReporteResponse> listarReportes() {
+    return reporteRepository.findAll()
+            .stream()
+            .map(r -> new ReporteResponse(
+                    r.getIdReporte(),
+                    r.getTitulo(),
+                    r.getDescripcion(),
+                    r.getFechaCreacion(),
+                    r.getEmpleado() != null ? r.getEmpleado().getNombres() + " " + r.getEmpleado().getApellidos() : null,
+                    r.getUsuario() != null ? r.getUsuario().getUsername() : null, // ← CAMBIADO AQUÍ
+                    r.getDepartamento() != null ? r.getDepartamento().getNombre() : null
+            ))
+            .collect(Collectors.toList());
+}
 
     //2. Listar reporte por ID
     @GetMapping("/{id}")
