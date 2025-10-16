@@ -2,6 +2,7 @@ package backend.backend.controller;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import backend.backend.dto.UsuarioResponse;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
 
@@ -26,42 +28,61 @@ public class UsuarioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // ✅ 1. Listar todos los usuarios
+    // 1. Listar todos los usuarios
     @GetMapping
-    public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll();
+    public List<UsuarioResponse> listarUsuarios() {
+    List<Usuario> usuarios = usuarioRepository.findAll();
+    return usuarios.stream()
+            .map(usuario -> new UsuarioResponse(
+                    usuario.getIdUsuario(),
+                    usuario.getUsername(),
+                    usuario.getRol().name()
+            ))
+            .collect(Collectors.toList());
     }
 
     // ✅ 2. Listar usuario por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long  id) {
+    public ResponseEntity<UsuarioResponse> obtenerUsuarioPorId(@PathVariable Long id) {
         Optional<Usuario> usuario = usuarioRepository.findById(id);
-        return usuario.map(ResponseEntity::ok)
-                      .orElseGet(() -> ResponseEntity.notFound().build());
+
+        return usuario.map(u -> ResponseEntity.ok(
+                        new UsuarioResponse(
+                                u.getIdUsuario(),
+                                u.getUsername(),
+                                u.getRol().name()
+                        )
+                ))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ✅ 3. Agregar usuario
+    // 3. Agregar usuario
     @PostMapping
-    public ResponseEntity<Usuario> agregarUsuario(@RequestBody Usuario usuario) {
-        try {
-            Usuario nuevoUsuario = usuarioRepository.save(usuario);
-            return ResponseEntity.ok(nuevoUsuario);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<UsuarioResponse> crearUsuario(@RequestBody Usuario nuevoUsuario) {
+        Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+        UsuarioResponse usuarioResponse = new UsuarioResponse(
+                usuarioGuardado.getIdUsuario(),
+                usuarioGuardado.getUsername(),
+                usuarioGuardado.getRol().name()
+        );
+        return ResponseEntity.status(201).body(usuarioResponse); // 201 Created
     }
 
-    // ✅ 4. Modificar usuario
+    //4. Modificar usuario
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long  id, @RequestBody Usuario usuarioActualizado) {
+    public ResponseEntity<UsuarioResponse> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioRepository.findById(id)
-                .map(usuarioExistente -> {
-                    usuarioExistente.setUsername(usuarioActualizado.getUsername());
-                    usuarioExistente.setPassword(usuarioActualizado.getPassword());
-                    usuarioExistente.setRol(usuarioActualizado.getRol());
-                    usuarioExistente.setEstado(usuarioActualizado.isEstado());
-                    Usuario actualizado = usuarioRepository.save(usuarioExistente);
-                    return ResponseEntity.ok(actualizado);
+                .map(usuario -> {
+                    usuario.setUsername(usuarioActualizado.getUsername());
+                    usuario.setPassword(usuarioActualizado.getPassword());
+                    usuario.setRol(usuarioActualizado.getRol());
+                    Usuario usuarioGuardado = usuarioRepository.save(usuario);
+                    UsuarioResponse usuarioResponse = new UsuarioResponse(
+                            usuarioGuardado.getIdUsuario(),
+                            usuarioGuardado.getUsername(),
+                            usuarioGuardado.getRol().name()
+                    );
+                    return ResponseEntity.ok(usuarioResponse);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

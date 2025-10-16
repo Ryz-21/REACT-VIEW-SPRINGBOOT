@@ -27,6 +27,8 @@ import backend.backend.repository.EmpleadoRepository;
 public class EmpleadoController {
     @Autowired//inyeccion de dependencias
     private EmpleadoRepository empleadoRepository;
+
+    private EmpleadoResponse empleadoResponse;
     
     //1. Listar todos los empleados
     @GetMapping

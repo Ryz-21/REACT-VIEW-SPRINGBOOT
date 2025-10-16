@@ -30,10 +30,10 @@ public class Reporte {
     private Long idReporte;
 
     @Column(length = 50)
-    private String Titulo;
+    private String titulo;
 
     @Column(length = 50)
-    private String Descripcion;
+    private String descripcion;
 
     @Column(nullable = false)
     @Builder.Default

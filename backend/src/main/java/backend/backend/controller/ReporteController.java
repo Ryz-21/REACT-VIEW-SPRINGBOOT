@@ -40,41 +40,71 @@ public List<ReporteResponse> listarReportes() {
                     r.getDescripcion(),
                     r.getFechaCreacion(),
                     r.getEmpleado() != null ? r.getEmpleado().getNombres() + " " + r.getEmpleado().getApellidos() : null,
-                    r.getUsuario() != null ? r.getUsuario().getUsername() : null, // ← CAMBIADO AQUÍ
+                    r.getUsuario() != null ? r.getUsuario().getUsername() : null,
                     r.getDepartamento() != null ? r.getDepartamento().getNombre() : null
             ))
             .collect(Collectors.toList());
 }
 
+
     //2. Listar reporte por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Reporte> obtenerReportePorId(@PathVariable Long id){
+    public ResponseEntity<ReporteResponse> obtenerReportePorId(@PathVariable Long id){
         Optional<Reporte> reporte=reporteRepository.findById(id);
-        return reporte.map(ResponseEntity::ok)
-                .orElseGet(()->ResponseEntity.notFound().build());
+        return reporte.map(r->ResponseEntity.ok(
+                new ReporteResponse(
+                        r.getIdReporte(),
+                        r.getTitulo(),
+                        r.getDescripcion(),
+                        r.getFechaCreacion(),
+                        r.getEmpleado() != null ? r.getEmpleado().getNombres() + " " + r.getEmpleado().getApellidos() : null,
+                        r.getUsuario() != null ? r.getUsuario().getUsername() : null,
+                        r.getDepartamento() != null ? r.getDepartamento().getNombre() : null
+                )
+        ))
+        .orElseGet(()->ResponseEntity.notFound().build());
     }
-
     //3. Agregar reporte
     @PostMapping
-    public ResponseEntity<Reporte> agregarReporte(@RequestBody Reporte reporte){
+    public ResponseEntity<ReporteResponse> agregarReporte(@RequestBody Reporte reporte){
         try{
-            Reporte nuevoReporte=reporteRepository.save(reporte);
-            return ResponseEntity.ok(nuevoReporte);
+            Reporte nuevo=reporteRepository.save(reporte);
+            ReporteResponse response=new ReporteResponse(
+                    nuevo.getIdReporte(),
+                    nuevo.getTitulo(),
+                    nuevo.getDescripcion(),
+                    nuevo.getFechaCreacion(),
+                    nuevo.getEmpleado() != null ? nuevo.getEmpleado().getNombres() + " " + nuevo.getEmpleado().getApellidos() : null,
+                    nuevo.getUsuario() != null ? nuevo.getUsuario().getUsername() : null,
+                    nuevo.getDepartamento() != null ? nuevo.getDepartamento().getNombre() : null
+            );
+            return ResponseEntity.ok(response);
         }catch(Exception e){
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(500).build();
         }
     }
     //4. Modificar reporte
     @PutMapping("/{id}")
-    public ResponseEntity<Reporte> actualizarReporte(@PathVariable Long id,@RequestBody Reporte reporte
-    ){
+    public ResponseEntity<ReporteResponse> modificarReporte(@PathVariable Long id, @RequestBody Reporte reporte){
         return reporteRepository.findById(id)
-                .map(reporteExistente->{
-                    reporteExistente.setTitulo(reporte.getTitulo());
-                    reporteExistente.setDescripcion(reporte.getDescripcion());
-                    reporteExistente.setFechaCreacion(reporte.getFechaCreacion());
-                    Reporte actualizado=reporteRepository.save(reporteExistente);
-                    return ResponseEntity.ok(actualizado);
+                .map(r->{
+                    r.setTitulo(reporte.getTitulo());
+                    r.setDescripcion(reporte.getDescripcion());
+                    r.setFechaCreacion(reporte.getFechaCreacion());
+                    r.setEmpleado(reporte.getEmpleado());
+                    r.setUsuario(reporte.getUsuario());
+                    r.setDepartamento(reporte.getDepartamento());
+                    Reporte actualizado=reporteRepository.save(r);
+                    ReporteResponse response=new ReporteResponse(
+                            actualizado.getIdReporte(),
+                            actualizado.getTitulo(),
+                            actualizado.getDescripcion(),
+                            actualizado.getFechaCreacion(),
+                            actualizado.getEmpleado() != null ? actualizado.getEmpleado().getNombres() + " " + actualizado.getEmpleado().getApellidos() : null,
+                            actualizado.getUsuario() != null ? actualizado.getUsuario().getUsername() : null,
+                            actualizado.getDepartamento() != null ? actualizado.getDepartamento().getNombre() : null
+                    );
+                    return ResponseEntity.ok(response);
                 })
                 .orElseGet(()->ResponseEntity.notFound().build());
     }
