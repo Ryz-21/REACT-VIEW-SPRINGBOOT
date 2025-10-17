@@ -20,22 +20,20 @@ import backend.backend.dto.EmpleadoResponse;
 import backend.backend.model.Empleado;
 import backend.backend.repository.EmpleadoRepository;
 
-@RestController//indica que es un controlador rest
-@RequestMapping("/api/empleados")//ruta base para acceder a los endpoints
+@RestController // indica que es un controlador REST
+@RequestMapping("/api/empleados") // ruta base para acceder a los endpoints
 @CrossOrigin(origins = "*") // Permite peticiones desde cualquier frontend (opcional)
-
 public class EmpleadoController {
-    @Autowired//inyeccion de dependencias
+
+    @Autowired
     private EmpleadoRepository empleadoRepository;
 
-    private EmpleadoResponse empleadoResponse;
-    
-    //1. Listar todos los empleados
+    // 1. Listar todos los empleados
     @GetMapping
-    public List<EmpleadoResponse> listarEmpleado(){
+    public List<EmpleadoResponse> listarEmpleado() {
         return empleadoRepository.findAll()
                 .stream()
-                .map(e->new EmpleadoResponse(
+                .map(e -> new EmpleadoResponse(
                         e.getIdEmpleado(),
                         e.getNombres(),
                         e.getApellidos(),
@@ -43,17 +41,20 @@ public class EmpleadoController {
                         e.getTelefono(),
                         e.getEmail(),
                         e.getDireccion(),
+                        e.getSalario(),        // salario antes de fechas
                         e.getFechaIngreso(),
                         e.getFechaSalida(),
                         e.getDepartamento().getIdDepartamento()
                 ))
                 .collect(Collectors.toList());
     }
-    //2. Listar empleado por ID
+
+    // 2. Obtener empleado por ID
     @GetMapping("/{id}")
-    public ResponseEntity<EmpleadoResponse> obtenerEmpleadoPorId(@PathVariable Long id){
-        Optional<Empleado> empleado=empleadoRepository.findById(id);
-        return empleado.map(e->ResponseEntity.ok(
+    public ResponseEntity<EmpleadoResponse> obtenerEmpleadoPorId(@PathVariable Long id) {
+        Optional<Empleado> empleado = empleadoRepository.findById(id);
+
+        return empleado.map(e -> ResponseEntity.ok(
                 new EmpleadoResponse(
                         e.getIdEmpleado(),
                         e.getNombres(),
@@ -62,19 +63,21 @@ public class EmpleadoController {
                         e.getTelefono(),
                         e.getEmail(),
                         e.getDireccion(),
+                        e.getSalario(),
                         e.getFechaIngreso(),
                         e.getFechaSalida(),
                         e.getDepartamento().getIdDepartamento()
                 )
-        ))
-        .orElseGet(()->ResponseEntity.notFound().build());
+        )).orElseGet(() -> ResponseEntity.notFound().build());
     }
-    //3. Agregar empleado
-    @PostMapping//ruta para agregar un empleado
-    public ResponseEntity<EmpleadoResponse> agregarEmpleado(@RequestBody Empleado empleado){
-        try{
-            Empleado nuevo=empleadoRepository.save(empleado);
-            EmpleadoResponse response=new EmpleadoResponse(
+
+    // 3. Agregar empleado
+    @PostMapping
+    public ResponseEntity<EmpleadoResponse> agregarEmpleado(@RequestBody Empleado empleado) {
+        try {
+            Empleado nuevo = empleadoRepository.save(empleado);
+
+            EmpleadoResponse response = new EmpleadoResponse(
                     nuevo.getIdEmpleado(),
                     nuevo.getNombres(),
                     nuevo.getApellidos(),
@@ -82,20 +85,24 @@ public class EmpleadoController {
                     nuevo.getTelefono(),
                     nuevo.getEmail(),
                     nuevo.getDireccion(),
+                    nuevo.getSalario(),
                     nuevo.getFechaIngreso(),
                     nuevo.getFechaSalida(),
                     nuevo.getDepartamento().getIdDepartamento()
             );
+
             return ResponseEntity.ok(response);
-        }catch(Exception e){
+
+        } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
     }
-    //4. Modificar empleado
-    @PutMapping("/{id}")//ruta para modificar un empleado
-    public ResponseEntity<EmpleadoResponse> actualizarEmpleado(@PathVariable Long id,@RequestBody Empleado empleado){
+
+    // 4. Modificar empleado
+    @PutMapping("/{id}")
+    public ResponseEntity<EmpleadoResponse> actualizarEmpleado(@PathVariable Long id, @RequestBody Empleado empleado) {
         return empleadoRepository.findById(id)
-                .map(e->{
+                .map(e -> {
                     e.setNombres(empleado.getNombres());
                     e.setApellidos(empleado.getApellidos());
                     e.setDni(empleado.getDni());
@@ -104,9 +111,12 @@ public class EmpleadoController {
                     e.setDireccion(empleado.getDireccion());
                     e.setFechaIngreso(empleado.getFechaIngreso());
                     e.setFechaSalida(empleado.getFechaSalida());
+                    e.setSalario(empleado.getSalario());
                     e.setDepartamento(empleado.getDepartamento());
-                    Empleado actualizado=empleadoRepository.save(e);
-                    EmpleadoResponse response=new EmpleadoResponse(
+
+                    Empleado actualizado = empleadoRepository.save(e);
+
+                    EmpleadoResponse response = new EmpleadoResponse(
                             actualizado.getIdEmpleado(),
                             actualizado.getNombres(),
                             actualizado.getApellidos(),
@@ -114,25 +124,25 @@ public class EmpleadoController {
                             actualizado.getTelefono(),
                             actualizado.getEmail(),
                             actualizado.getDireccion(),
+                            actualizado.getSalario(),
                             actualizado.getFechaIngreso(),
                             actualizado.getFechaSalida(),
                             actualizado.getDepartamento().getIdDepartamento()
                     );
+
                     return ResponseEntity.ok(response);
                 })
-                .orElseGet(()->ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    //5. Eliminar empleado
-    @DeleteMapping("/{id}")//ruta para eliminar un empleado
-    public ResponseEntity<Void> eliminarEmpleado(@PathVariable Long id){
+
+    // 5. Eliminar empleado
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarEmpleado(@PathVariable Long id) {
         return empleadoRepository.findById(id)
-                .map(empleado->{
+                .map(empleado -> {
                     empleadoRepository.delete(empleado);
                     return ResponseEntity.noContent().<Void>build();
                 })
-                .orElseGet(()->ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
 }
-          
-

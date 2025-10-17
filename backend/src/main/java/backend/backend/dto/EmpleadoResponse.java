@@ -18,6 +18,7 @@ public class EmpleadoResponse {
     private String telefono;
     private String email;
     private String direccion;
+    private Double salario;
     private LocalDate fechaIngreso;
     private LocalDate fechaSalida;
     private Long idDepartamento;
