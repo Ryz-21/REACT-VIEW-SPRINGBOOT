@@ -68,7 +68,10 @@ public class Empleado {
     private List<Reporte> reportes;
 
     // 🔹 Inicializar fecha de ingreso automáticamente
-    @PrePersist
+    @PrePersist // Antes de insertar en la base de datos
+    //PrePersist es un callback que se ejecuta antes de que la entidad sea persistida en la base de datos.
+    //Se utiliza para realizar acciones automáticas, como establecer valores predeterminados o inicializar
+    //atributos antes de que la entidad se guarde.
     protected void onCreate() {
         this.fechaIngreso = java.time.LocalDate.now();
     }

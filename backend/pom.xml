@@ -44,12 +44,11 @@
         </dependency>
 
         <!-- ✅ Lombok (para getters/setters automáticos) -->
-        <dependency>
+              <dependency>
     <groupId>org.projectlombok</groupId>
     <artifactId>lombok</artifactId>
     <scope>provided</scope>
 </dependency>
-      
 
         <!-- ✅ Spring Security (si lo usarás luego) -->
         <dependency>
