@@ -12,4 +12,5 @@ public class UsuarioResponse {
     private Long idUsuario;
     private String username;
     private String role;
+    private String  email;
 }

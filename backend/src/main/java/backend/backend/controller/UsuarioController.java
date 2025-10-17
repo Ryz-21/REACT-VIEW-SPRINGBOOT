@@ -6,42 +6,35 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import backend.backend.dto.UsuarioRequest;
 import backend.backend.dto.UsuarioResponse;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@CrossOrigin(origins = "*") // Permite peticiones desde cualquier frontend (opcional)
+@CrossOrigin(origins = "*")
 public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // 1. Listar todos los usuarios
+    // 1️⃣ Listar todos los usuarios
     @GetMapping
     public List<UsuarioResponse> listarUsuarios() {
-    List<Usuario> usuarios = usuarioRepository.findAll();
-    return usuarios.stream()
-            .map(usuario -> new UsuarioResponse(
-                    usuario.getIdUsuario(),
-                    usuario.getUsername(),
-                    usuario.getRol().name()
-            ))
-            .collect(Collectors.toList());
+        return usuarioRepository.findAll().stream()
+                .map(usuario -> new UsuarioResponse(
+                        usuario.getIdUsuario(),
+                        usuario.getUsername(),
+                        usuario.getRol().name(),
+                        usuario.getEmail()
+                ))
+                .collect(Collectors.toList());
     }
 
-    // ✅ 2. Listar usuario por ID
+    // 2️⃣ Obtener usuario por ID
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> obtenerUsuarioPorId(@PathVariable Long id) {
         Optional<Usuario> usuario = usuarioRepository.findById(id);
@@ -50,51 +43,77 @@ public class UsuarioController {
                         new UsuarioResponse(
                                 u.getIdUsuario(),
                                 u.getUsername(),
-                                u.getRol().name()
+                                u.getRol().name(),
+                                u.getEmail()
                         )
                 ))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 3. Agregar usuario
+    // 3️⃣ Crear nuevo usuario (rol por defecto = USER)
     @PostMapping
-    public ResponseEntity<UsuarioResponse> crearUsuario(@RequestBody Usuario nuevoUsuario) {
-        Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
-        UsuarioResponse usuarioResponse = new UsuarioResponse(
-                usuarioGuardado.getIdUsuario(),
-                usuarioGuardado.getUsername(),
-                usuarioGuardado.getRol().name()
-        );
-        return ResponseEntity.status(201).body(usuarioResponse); // 201 Created
+    public ResponseEntity<UsuarioResponse> crearUsuario(@RequestBody UsuarioRequest request) {
+        try {
+            Usuario nuevoUsuario = Usuario.builder()
+                    .username(request.getUsername())
+                    .password(request.getPassword())
+                    .email(request.getEmail())
+                    .rol(request.getRole() != null
+                            ? Usuario.Rol.valueOf(request.getRole().toUpperCase())
+                            : Usuario.Rol.USER) // Por defecto USER
+                    .build();
+
+            Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+
+            UsuarioResponse response = new UsuarioResponse(
+                    usuarioGuardado.getIdUsuario(),
+                    usuarioGuardado.getUsername(),
+                    usuarioGuardado.getRol().name(),
+                    usuarioGuardado.getEmail()
+            );
+
+            return ResponseEntity.status(201).body(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
-    //4. Modificar usuario
+    // 4️⃣ Actualizar usuario (permite cambiar rol si lo desea)
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
+    public ResponseEntity<UsuarioResponse> actualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody UsuarioRequest request) {
+
         return usuarioRepository.findById(id)
                 .map(usuario -> {
-                    usuario.setUsername(usuarioActualizado.getUsername());
-                    usuario.setPassword(usuarioActualizado.getPassword());
-                    usuario.setRol(usuarioActualizado.getRol());
-                    Usuario usuarioGuardado = usuarioRepository.save(usuario);
-                    UsuarioResponse usuarioResponse = new UsuarioResponse(
-                            usuarioGuardado.getIdUsuario(),
-                            usuarioGuardado.getUsername(),
-                            usuarioGuardado.getRol().name()
+                    usuario.setUsername(request.getUsername());
+                    usuario.setPassword(request.getPassword());
+                    usuario.setEmail(request.getEmail());
+                    if (request.getRole() != null) {
+                        usuario.setRol(Usuario.Rol.valueOf(request.getRole().toUpperCase()));
+                    }
+                    Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+                    UsuarioResponse response = new UsuarioResponse(
+                            usuarioActualizado.getIdUsuario(),
+                            usuarioActualizado.getUsername(),
+                            usuarioActualizado.getRol().name(),
+                            usuarioActualizado.getEmail()
                     );
-                    return ResponseEntity.ok(usuarioResponse);
+                    return ResponseEntity.ok(response);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ✅ 5. Eliminar usuario
+    // 5️⃣ Eliminar usuario por ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long  id) {
+    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
         if (usuarioRepository.existsById(id)) {
             usuarioRepository.deleteById(id);
-            return ResponseEntity.noContent().build(); // 204
+            return ResponseEntity.noContent().build();
         } else {
-            return ResponseEntity.notFound().build(); // 404
+            return ResponseEntity.notFound().build();
         }
     }
 }
