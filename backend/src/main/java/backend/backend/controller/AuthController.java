@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import backend.backend.Service.EmailService;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,6 +21,8 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private  EmailService emailService;
     // 🔹 Login
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
@@ -56,4 +60,30 @@ public class AuthController {
         usuarioRepository.save(nuevoUsuario);
         return ResponseEntity.ok("✅ Usuario registrado con éxito");
     }
+
+    //  enviar correo de recuperacion de contraseña
+     @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        var usuario = usuarioRepository.findAll()
+                .stream()
+                .filter(u -> u.getEmail().equalsIgnoreCase(email))
+                .findFirst();
+
+        if (usuario.isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ No existe un usuario con ese correo.");
+        }
+
+        Usuario user = usuario.get();
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(15));
+        usuarioRepository.save(user);
+
+        String link = "http://localhost:8080/api/auth/reset-password?token=" + token;
+        emailService.enviarCorreo(email, "Recuperación de contraseña",
+                "Hola " + user.getUsername() + ",\n\nUsa este enlace para restablecer tu contraseña:\n" + link + "\n\nExpira en 15 minutos.");
+
+        return ResponseEntity.ok("✅ Se envió un correo con el enlace de recuperación.");
+    }
+
 }

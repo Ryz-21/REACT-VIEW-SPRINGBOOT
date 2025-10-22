@@ -42,6 +42,12 @@ public class Usuario {
     @Column(length = 10)
     private Rol rol = Rol.USER;
 
+    @Column (name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiration")
+    private LocalDateTime resetTokenExpiration;
+    
     @Builder.Default
     @Column(nullable = false)
     private boolean estado = true;
@@ -49,6 +55,7 @@ public class Usuario {
     @Builder.Default
     @Column(name = "creado_en", updatable = false)
     private LocalDateTime creadoEn = LocalDateTime.now();
+
 
     public enum Rol {
         ADMIN, USER
