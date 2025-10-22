@@ -21,7 +21,9 @@ public class UsuarioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // 1️⃣ Listar todos los usuarios
+
+    
+    // 1️ Listar todos los usuarios
     @GetMapping
     public List<UsuarioResponse> listarUsuarios() {
         return usuarioRepository.findAll().stream()
@@ -34,7 +36,7 @@ public class UsuarioController {
                 .collect(Collectors.toList());
     }
 
-    // 2️⃣ Obtener usuario por ID
+    // 2️ Obtener usuario por ID
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> obtenerUsuarioPorId(@PathVariable Long id) {
         Optional<Usuario> usuario = usuarioRepository.findById(id);
@@ -50,7 +52,7 @@ public class UsuarioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 3️⃣ Crear nuevo usuario (rol por defecto = USER)
+    // 3️ Crear nuevo usuario (rol por defecto = USER)
     @PostMapping
     public ResponseEntity<UsuarioResponse> crearUsuario(@RequestBody UsuarioRequest request) {
         try {
@@ -79,7 +81,7 @@ public class UsuarioController {
         }
     }
 
-    // 4️⃣ Actualizar usuario (permite cambiar rol si lo desea)
+    // 4️ Actualizar usuario (permite cambiar rol si lo desea)
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> actualizarUsuario(
             @PathVariable Long id,
@@ -106,7 +108,7 @@ public class UsuarioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 5️⃣ Eliminar usuario por ID
+    // 5️ Eliminar usuario por ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
         if (usuarioRepository.existsById(id)) {
