@@ -23,7 +23,7 @@ public class AuthController {
 
     @Autowired
     private  EmailService emailService;
-    // 🔹 Login
+    //  Login
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
         return usuarioRepository.findByUsername(username)
@@ -37,7 +37,7 @@ public class AuthController {
                 .orElse(ResponseEntity.status(404).body("❌ Usuario no encontrado"));
     }
 
-    // 🔹 Registro (signup)
+    //  Registro (signup)
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestParam String username,
                                            @RequestParam String email,
@@ -86,4 +86,28 @@ public class AuthController {
         return ResponseEntity.ok("✅ Se envió un correo con el enlace de recuperación.");
     }
 
+    // restablecer la contraseña
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword (@RequestParam String token, @RequestParam String newPassword) {
+        var usuario = usuarioRepository.findAll()
+                .stream()
+                .filter(u -> token.equals(u.getResetToken()))
+                .findFirst();
+
+        if (usuario.isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ Token inválido o expirado.");
+        }
+
+        Usuario user = usuario.get();
+        if (user.getResetTokenExpiration().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("❌ Token expirado.");
+        }
+
+        user.setPassword(newPassword);
+        user.setResetToken(null);
+        user.setResetTokenExpiration(null);
+        usuarioRepository.save(user);
+
+        return ResponseEntity.ok("✅ Contraseña restablecida con éxito.");
+    }
 }
