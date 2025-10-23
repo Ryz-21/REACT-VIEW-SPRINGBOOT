@@ -140,3 +140,28 @@ html, body, #root {
 .signup-text a:hover {
   text-decoration: underline;
 }
+
+
+/*icons for social buttons*/
+
+/* Tamaño de los íconos dentro de los botones sociales */
+.social-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: grayscale(20%);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+/* Efecto hover */
+.social-btn:hover img {
+  transform: scale(1.1);
+  filter: none;
+}
+
+/* Ajusta el tamaño de los íconos de Google y GitHub */
+.social-btn.google img,
+.social-btn.github img {
+  width: 26px;
+  height: 26px;
+}

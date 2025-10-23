@@ -1,17 +1,21 @@
 package backend.backend.controller;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import backend.backend.Service.EmailService;
+import backend.backend.dto.UsuarioRequest;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,32 +26,49 @@ public class AuthController {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private  EmailService emailService;
-    //  Login
+    private EmailService emailService;
+
+    //cambiamos RequestParam por RequestBody para mayor seguridad
+    //  Requestparam sirve para enviar datos por la URL, lo cual no es seguro para datos sensibles como contraseñas.
+    // En cambio, RequestBody permite enviar datos en el cuerpo de la solicitud HTTP, protegiendo mejor la información sensible.
+    // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<String> login(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        if (username == null || password == null) {
+            return ResponseEntity.badRequest().body("Faltan campos requeridos (username, password)");
+        }
+
         return usuarioRepository.findByUsername(username)
                 .map(usuario -> {
                     if (usuario.getPassword().equals(password)) {
-                        return ResponseEntity.ok("✅ Login exitoso. Bienvenido, " + usuario.getUsername());
+                        return ResponseEntity.ok(" Login exitoso. Bienvenido, " + usuario.getUsername());
                     } else {
-                        return ResponseEntity.status(401).body("❌ Contraseña incorrecta");
+                        return ResponseEntity.status(401).body(" Contraseña incorrecta");
                     }
                 })
-                .orElse(ResponseEntity.status(404).body("❌ Usuario no encontrado"));
+                .orElse(ResponseEntity.status(404).body("Usuario no encontrado"));
     }
 
-    //  Registro (signup)
+    // REGISTRO
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestParam String username,
-                                           @RequestParam String email,
-                                           @RequestParam String password) {
+    public ResponseEntity<String> register(@RequestBody UsuarioRequest request) {
+        String username = request.getUsername();
+        String email = request.getEmail();
+        String password = request.getPassword();
+
+        if (username == null || email == null || password == null) {
+            return ResponseEntity.badRequest().body(" Faltan campos requeridos");
+        }
+
         if (usuarioRepository.findByUsername(username).isPresent()) {
-            return ResponseEntity.badRequest().body("❌ El nombre de usuario ya está en uso");
+            return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
         }
 
         if (usuarioRepository.findAll().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(email))) {
-            return ResponseEntity.badRequest().body("❌ El correo ya está registrado");
+            return ResponseEntity.badRequest().body(" El correo ya está registrado");
         }
 
         Usuario nuevoUsuario = Usuario.builder()
@@ -58,19 +79,25 @@ public class AuthController {
                 .build();
 
         usuarioRepository.save(nuevoUsuario);
-        return ResponseEntity.ok("✅ Usuario registrado con éxito");
+        return ResponseEntity.ok("Usuario registrado con éxito");
     }
 
-    //  enviar correo de recuperacion de contraseña
-     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+    // RECUPERAR CONTRASEÑA
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        if (email == null) {
+            return ResponseEntity.badRequest().body(" El campo 'email' es obligatorio.");
+        }
+
         var usuario = usuarioRepository.findAll()
                 .stream()
                 .filter(u -> u.getEmail().equalsIgnoreCase(email))
                 .findFirst();
 
         if (usuario.isEmpty()) {
-            return ResponseEntity.badRequest().body("❌ No existe un usuario con ese correo.");
+            return ResponseEntity.badRequest().body("No existe un usuario con ese correo.");
         }
 
         Usuario user = usuario.get();
@@ -79,28 +106,37 @@ public class AuthController {
         user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(15));
         usuarioRepository.save(user);
 
+        // Enviar correo con el enlace de recuperación
         String link = "http://localhost:8080/api/auth/reset-password?token=" + token;
         emailService.enviarCorreo(email, "Recuperación de contraseña",
-                "Hola " + user.getUsername() + ",\n\nUsa este enlace para restablecer tu contraseña:\n" + link + "\n\nExpira en 15 minutos.");
+                "Hola " + user.getUsername() + ",\n\nUsa este enlace para restablecer tu contraseña:\n" +
+                        link + "\n\nExpira en 15 minutos.");
 
-        return ResponseEntity.ok("✅ Se envió un correo con el enlace de recuperación.");
+        return ResponseEntity.ok(" Se envió un correo con el enlace de recuperación.");
     }
 
-    // restablecer la contraseña
+    //  RESTABLECER CONTRASEÑA
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword (@RequestParam String token, @RequestParam String newPassword) {
+    public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+
+        if (token == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(" Faltan campos requeridos (token, newPassword)");
+        }
+
         var usuario = usuarioRepository.findAll()
                 .stream()
                 .filter(u -> token.equals(u.getResetToken()))
                 .findFirst();
 
         if (usuario.isEmpty()) {
-            return ResponseEntity.badRequest().body("❌ Token inválido o expirado.");
+            return ResponseEntity.badRequest().body(" Token inválido o expirado.");
         }
 
         Usuario user = usuario.get();
         if (user.getResetTokenExpiration().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("❌ Token expirado.");
+            return ResponseEntity.badRequest().body(" Token expirado.");
         }
 
         user.setPassword(newPassword);
@@ -108,6 +144,6 @@ public class AuthController {
         user.setResetTokenExpiration(null);
         usuarioRepository.save(user);
 
-        return ResponseEntity.ok("✅ Contraseña restablecida con éxito.");
+        return ResponseEntity.ok(" Contraseña restablecida con éxito.");
     }
 }

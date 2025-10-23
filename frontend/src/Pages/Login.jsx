@@ -1,5 +1,8 @@
 import React, {useState} from "react";
 import "../styless/Login.css";
+import googleIcon from "../assets/loginimage/googleico.png";
+import githubIcon from "../assets/loginimage/githubico.png";
+import facebookIcon from "../assets/loginimage/facebookico.png";
 
 function Login() {
     const [email, setEmail] = useState("");
@@ -48,10 +51,16 @@ function Login() {
                     <div className="divider">or</div>
 
                     <div className="social-login">
-                        <button type="button" className="social-btn google">G</button>
-                        <button type="button" className="social-btn github">🐙</button>
-                        <button type="button" className="social-btn facebook">🐦</button>
-                    </div>
+                        <button type="button" className="social-btn google">
+                            <img src={googleIcon} alt="Google" />
+                        </button>
+                        <button type = "button" className ="social-btn github">
+                            <img src = {githubIcon} alt="GitHub" />
+                        </button>
+                        <button type = "button" className="social-btn facebook">
+                            <img src={facebookIcon} alt="Facebook" />
+                        </button>
+                        </div>
 
                     <p className ="signup-text">
                         Don't have an account? <a href="#">Sign Up</a>
