@@ -2,7 +2,6 @@ package backend.backend.controller;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -85,36 +84,45 @@ public class AuthController {
     // RECUPERAR CONTRASEÑA
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
+     String email = request.get("email");
 
-        if (email == null) {
-            return ResponseEntity.badRequest().body(" El campo 'email' es obligatorio.");
-        }
-
-        var usuario = usuarioRepository.findAll()
-                .stream()
-                .filter(u -> u.getEmail().equalsIgnoreCase(email))
-                .findFirst();
-
-        if (usuario.isEmpty()) {
-            return ResponseEntity.badRequest().body("No existe un usuario con ese correo.");
-        }
-
-        Usuario user = usuario.get();
-        String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
-        user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(15));
-        usuarioRepository.save(user);
-
-        // Enviar correo con el enlace de recuperación
-        String link = "http://localhost:8080/api/auth/reset-password?token=" + token;
-        emailService.enviarCorreo(email, "Recuperación de contraseña",
-                "Hola " + user.getUsername() + ",\n\nUsa este enlace para restablecer tu contraseña:\n" +
-                        link + "\n\nExpira en 15 minutos.");
-
-        return ResponseEntity.ok(" Se envió un correo con el enlace de recuperación.");
+    if (email == null) {
+        return ResponseEntity.badRequest().body("El campo 'email' es obligatorio.");
     }
 
+    var usuario = usuarioRepository.findAll()
+            .stream()
+            .filter(u -> u.getEmail().equalsIgnoreCase(email))
+            .findFirst();
+
+    if (usuario.isEmpty()) {
+        return ResponseEntity.badRequest().body("No existe un usuario con ese correo.");
+    }
+
+    Usuario user = usuario.get();
+
+    // Generar código alfanumérico de 6 caracteres
+    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    StringBuilder verificationCode = new StringBuilder();
+    for (int i = 0; i < 6; i++) {
+        int index = (int) (Math.random() * chars.length());
+        verificationCode.append(chars.charAt(index));
+    }
+
+    user.setResetToken(verificationCode.toString());
+    user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(10)); // expira en 10 minutos
+    usuarioRepository.save(user);
+
+    // Enviar correo con el código
+    emailService.enviarCorreo(
+        email,
+        "Código de recuperación de contraseña",
+        "Hola " + user.getUsername() + ",\n\nTu código de recuperación es: " + verificationCode +
+        "\n\nEste código expira en 10 minutos."
+    );
+
+    return ResponseEntity.ok("Se envió un código de verificación al correo.");
+    } 
     //  RESTABLECER CONTRASEÑA
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
@@ -146,4 +154,36 @@ public class AuthController {
 
         return ResponseEntity.ok(" Contraseña restablecida con éxito.");
     }
+
+@PostMapping("/verify-code")
+public ResponseEntity<String> verifyCodeAndResetPassword(@RequestBody Map<String, String> request) {
+    String code = request.get("code");
+    String newPassword = request.get("newPassword");
+
+    if (code == null || newPassword == null) {
+        return ResponseEntity.badRequest().body("Faltan campos requeridos (code, newPassword)");
+    }
+
+    var usuario = usuarioRepository.findAll()
+            .stream()
+            .filter(u -> code.equals(u.getResetToken()))
+            .findFirst();
+
+    if (usuario.isEmpty()) {
+        return ResponseEntity.badRequest().body("Código inválido o expirado.");
+    }
+
+    Usuario user = usuario.get();
+
+    if (user.getResetTokenExpiration().isBefore(LocalDateTime.now())) {
+        return ResponseEntity.badRequest().body("El código ha expirado.");
+    }
+
+    user.setPassword(newPassword);
+    user.setResetToken(null);
+    user.setResetTokenExpiration(null);
+    usuarioRepository.save(user);
+
+    return ResponseEntity.ok("Contraseña restablecida correctamente.");
+}
 }
