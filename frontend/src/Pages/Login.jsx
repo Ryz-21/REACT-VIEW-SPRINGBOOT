@@ -3,24 +3,32 @@ import "../styless/Login.css";
 import googleIcon from "../assets/loginimage/googleico.png";
 import githubIcon from "../assets/loginimage/githubico.png";
 import facebookIcon from "../assets/loginimage/facebookico.png";
-import { login } from "../services/authService"; // Importa el servicio
+import { login } from "../services/authService";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState(""); // Para mostrar mensajes de éxito o error
+  const [errorMsg, setErrorMsg] = useState(""); // solo para errores
 
-  // Maneja el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg(""); // limpia mensaje anterior
+
     try {
-      const result = await login(email, password); // Llama al backend
-      setMessage(result); // Muestra el mensaje devuelto por el backend
+      const result = await login(email, password);
       console.log("✅ Login exitoso:", result);
-      // Si deseas redirigir al Dashboard:
+
+      // Notificación tipo toast simple
+      alert("Inicio de sesión exitoso 👋 Bienvenido " + email);
+
+      // Redirigir o limpiar formulario
       // window.location.href = "/dashboard";
+      setEmail("");
+      setPassword("");
     } catch (error) {
-      setMessage(error.message);
+      // Mostrar mensaje de error debajo del formulario
+      setErrorMsg(error.message);
+      console.error("❌ Error en login:", error.message);
     }
   };
 
@@ -36,13 +44,13 @@ function Login() {
           <input
             id="email"
             type="email"
-            placeholder="Enter your email"
+            placeholder="Ingresa tu correo"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
 
-          <label htmlFor="password">Password:</label>
+          <label htmlFor="password">Contraseña:</label>
           <input
             id="password"
             type="password"
@@ -53,15 +61,17 @@ function Login() {
           />
 
           <div className="login-options">
-            <a href="#">Forgot Password?</a>
+            <a href="#">¿Olvidaste tu contraseña?</a>
           </div>
 
-          <button type="submit" className="login-button">Login</button>
+          <button type="submit" className="login-button">
+            Iniciar sesión
+          </button>
 
-          {/* Mensaje dinámico */}
-          {message && <p className="login-message">{message}</p>}
+          {/* Mensaje solo si hay error */}
+          {errorMsg && <p className="login-error">{errorMsg}</p>}
 
-          <div className="divider">or</div>
+          <div className="divider">o</div>
 
           <div className="social-login">
             <button type="button" className="social-btn google">
@@ -76,7 +86,7 @@ function Login() {
           </div>
 
           <p className="signup-text">
-            Don't have an account? <a href="#">Sign Up</a>
+            ¿No tienes cuenta? <a href="#">Regístrate</a>
           </p>
         </form>
       </div>

@@ -33,53 +33,62 @@ public class AuthController {
     // LOGIN
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
+    String email = request.get("email");
+    String password = request.get("password");
 
-        if (username == null || password == null) {
-            return ResponseEntity.badRequest().body("Faltan campos requeridos (username, password)");
-        }
-
-        return usuarioRepository.findByUsername(username)
-                .map(usuario -> {
-                    if (usuario.getPassword().equals(password)) {
-                        return ResponseEntity.ok(" Login exitoso. Bienvenido, " + usuario.getUsername());
-                    } else {
-                        return ResponseEntity.status(401).body(" Contraseña incorrecta");
-                    }
-                })
-                .orElse(ResponseEntity.status(404).body("Usuario no encontrado"));
+    if (email == null || password == null) {
+        return ResponseEntity.badRequest().body("Faltan campos requeridos (email, password)");
     }
 
-    // REGISTRO
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UsuarioRequest request) {
-        String username = request.getUsername();
-        String email = request.getEmail();
-        String password = request.getPassword();
+    return usuarioRepository.findByEmail(email)
+            .map(usuario -> {
+                if (usuario.getPassword().equals(password)) {
+                    return ResponseEntity.ok("Login exitoso. Bienvenido, " + usuario.getUsername());
+                } else {
+                    return ResponseEntity.status(401).body("Contraseña incorrecta");
+                }
+            })
+            .orElse(ResponseEntity.status(404).body("Usuario no encontrado"));
+}
 
-        if (username == null || email == null || password == null) {
-            return ResponseEntity.badRequest().body(" Faltan campos requeridos");
-        }
 
-        if (usuarioRepository.findByUsername(username).isPresent()) {
-            return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
-        }
+@PostMapping("/register")
+public ResponseEntity<String> register(@RequestBody UsuarioRequest request) {
+    String username = request.getUsername();
+    String email = request.getEmail();
+    String password = request.getPassword();
 
-        if (usuarioRepository.findAll().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(email))) {
-            return ResponseEntity.badRequest().body(" El correo ya está registrado");
-        }
-
-        Usuario nuevoUsuario = Usuario.builder()
-                .username(username)
-                .email(email)
-                .password(password)
-                .rol(Usuario.Rol.USER)
-                .build();
-
-        usuarioRepository.save(nuevoUsuario);
-        return ResponseEntity.ok("Usuario registrado con éxito");
+    if (username == null || email == null || password == null) {
+        return ResponseEntity.badRequest().body("Faltan campos requeridos");
     }
+
+    // Verificar si el email ya está registrado
+    if (usuarioRepository.findByEmail(email).isPresent()) {
+        return ResponseEntity.badRequest().body("El correo ya está registrado");
+    }
+
+    // Verificar si el username ya está en uso
+    boolean usernameExists = usuarioRepository.findAll()
+            .stream()
+            .anyMatch(u -> u.getUsername().equalsIgnoreCase(username));
+
+    if (usernameExists) {
+        return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
+    }
+
+    // Crear nuevo usuario
+    Usuario nuevoUsuario = Usuario.builder()
+            .username(username)
+            .email(email)
+            .password(password)
+            .rol(Usuario.Rol.USER)
+            .build();
+
+    usuarioRepository.save(nuevoUsuario);
+
+    return ResponseEntity.ok("Usuario registrado con éxito");
+}
+
 
     // RECUPERAR CONTRASEÑA
     @PostMapping("/forgot-password")

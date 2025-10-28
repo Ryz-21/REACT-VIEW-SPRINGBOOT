@@ -1,24 +1,27 @@
-const API_URL = "hhtp://localhosst:8080/api/auth";
+// src/services/authService.js
+const API_URL = "http://localhost:8080/api/auth"; // corregido
 
+export const login = async (email, password) => {
+  try {
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-export const login = async (email , password) => {
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-        });
+    const resultText = await response.text(); // Siempre obtiene el texto de respuesta
 
-        if (!response.ok){
-            const errorText = await response.text();
-            throw new Error(errorText);
-        }
-        return await response.text();
-    } catch (error) {
-        throw new Error("Login failed: " + error.message);
-        throw error;
+    if (!response.ok) {
+      // Si el backend devuelve 401 o 404, lanza error con el texto exacto
+      throw new Error(resultText);
     }
-//throw es un mecanismo para lanzar errores de manera explícita en JavaScript
+
+    return resultText; // Login exitoso
+  } catch (error) {
+    // Error general de conexión o backend caído
+    if (error.message.includes("Failed to fetch")) {
+      throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.");
+    }
+    throw error;
+  }
 };
