@@ -48,12 +48,11 @@
     <groupId>org.projectlombok</groupId>
     <artifactId>lombok</artifactId>
     <scope>provided</scope>
-</dependency>
-
-        <!-- ✅ Spring Security (si lo usarás luego) -->
+    </dependency>    
+        <!-- ✅ Spring Security + OAuth2 Client -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>            
         </dependency>
 
         <!-- ✅ Pruebas unitarias -->
