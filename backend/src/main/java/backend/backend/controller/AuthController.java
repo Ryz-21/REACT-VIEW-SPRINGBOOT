@@ -5,7 +5,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +18,7 @@ import backend.backend.Service.EmailService;
 import backend.backend.dto.UsuarioRequest;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
+
 
 @RestController
 @RequestMapping("/api/auth")
@@ -195,7 +199,27 @@ public ResponseEntity<String> verifyCodeAndResetPassword(@RequestBody Map<String
 
     return ResponseEntity.ok("Contraseña restablecida correctamente.");
 }
-
 //inicar sesion con google
+  @GetMapping("/oauth2/success")
+    public String success(@AuthenticationPrincipal OAuth2User oauthUser) {
+        String email = oauthUser.getAttribute("email");
+        String name = oauthUser.getAttribute("name");
 
+        // Buscar si ya existe el usuario
+        var usuarioExistente = usuarioRepository.findByEmail(email);
+
+        if (usuarioExistente.isEmpty()) {
+            // Registrar automáticamente si no existe
+            Usuario nuevoUsuario = Usuario.builder()
+                .username(name)
+                .email(email)
+                .password("oauth2") // puedes dejarlo vacío o marcador
+                .rol(Usuario.Rol.USER)
+                .build();
+
+            usuarioRepository.save(nuevoUsuario);
+        }
+
+        return "Login con Google exitoso. Bienvenido " + name + " (" + email + ")";
+    }
 }
