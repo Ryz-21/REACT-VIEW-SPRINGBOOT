@@ -222,4 +222,46 @@ public ResponseEntity<String> verifyCodeAndResetPassword(@RequestBody Map<String
 
         return "Login con Google exitoso. Bienvenido " + name + " (" + email + ")";
     }
+//inciar sesion con facebook
+    @GetMapping("/oauth2/facebook/success")
+    public String facebookSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
+        String email = oauthUser.getAttribute("email");
+        String name = oauthUser.getAttribute("name");
+        // Buscar si ya existe el usuario
+        var usuarioExistente = usuarioRepository.findByEmail(email);
+        if (usuarioExistente.isEmpty()) {
+            // Registrar automáticamente si no existe
+            Usuario nuevoUsuario = Usuario.builder()
+                .username(name)
+                .email(email)
+                .password("oauth2") // puedes dejarlo vacío o marcador
+                .rol(Usuario.Rol.USER)
+                .build();
+
+            usuarioRepository.save(nuevoUsuario);
+        }
+        return "Login con Facebook exitoso. Bienvenido " + name + " (" + email + ")";
+    }
+
+    // inicar sesion con github
+    @GetMapping("/oauth2/github/success")
+    public String githubSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
+        String email = oauthUser.getAttribute("email");
+        String name = oauthUser.getAttribute("name");
+        // Buscar si ya existe el usuario
+        var usuarioExistente = usuarioRepository.findByEmail(email);
+        if (usuarioExistente.isEmpty()) {
+            // Registrar automáticamente si no existe
+            Usuario nuevoUsuario = Usuario.builder()
+                .username(name)
+                .email(email)
+                .password("oauth2") // puedes dejarlo vacío o marcador
+                .rol(Usuario.Rol.USER)
+                .build();
+            usuarioRepository.save(nuevoUsuario);
+        }
+        return "Login con GitHub exitoso. Bienvenido " + name + " (" + email + ")";
+    }
+    
 }
+
