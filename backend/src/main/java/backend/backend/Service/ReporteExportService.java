@@ -2,10 +2,20 @@ package backend.backend.Service;
 
 import java.io.ByteArrayInputStream;
 import  java.io.ByteArrayOutputStream;
-import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.*;
-import org.springframework.stereotype.Service;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+
 import backend.backend.model.Reporte;
 import backend.backend.repository.ReporteRepository;
 
@@ -87,6 +97,8 @@ public class ReporteExportService {
     document.close();
     return new ByteArrayInputStream(out.toByteArray());
 }
+
+//exportar excel dinamico
 
 
 }
