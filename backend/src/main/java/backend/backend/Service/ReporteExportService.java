@@ -15,9 +15,14 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-
 import backend.backend.model.Reporte;
 import backend.backend.repository.ReporteRepository;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 public class ReporteExportService {
@@ -98,7 +103,96 @@ public class ReporteExportService {
     return new ByteArrayInputStream(out.toByteArray());
 }
 
-//exportar excel dinamico
+// Exportar Excel Dinámico
+public ByteArrayInputStream exportarExcel(List<String> campos) throws Exception {
+    List<Reporte> reportes = reporteRepository.findAll();
+
+    XSSFWorkbook workbook = new XSSFWorkbook();
+    XSSFSheet sheet = workbook.createSheet("Reporte Empleados");
+
+    int rowCount = 0;
+
+    // Estilo para encabezados
+    CellStyle headerStyle = workbook.createCellStyle();
+    XSSFFont font = workbook.createFont();
+    font.setBold(true);
+    headerStyle.setFont(font);
+
+    // Crear la fila de encabezados
+    Row headerRow = sheet.createRow(rowCount++);
+    int headerCol = 0;
+
+    for (String campo : campos) {
+        Cell cell = headerRow.createCell(headerCol++);
+        cell.setCellValue(campo.toUpperCase());
+        cell.setCellStyle(headerStyle);
+    }
+
+    // Llenado dinámico
+    for (Reporte r : reportes) {
+        Row row = sheet.createRow(rowCount++);
+        int colIndex = 0;
+
+        for (String campo : campos) {
+            Cell cell = row.createCell(colIndex++);
+
+            switch (campo.toLowerCase()) {
+                case "id":
+                    cell.setCellValue(r.getIdReporte());
+                    break;
+                case "titulo":
+                    cell.setCellValue(r.getTitulo());
+                    break;
+                case "empleado":
+                    if (r.getEmpleado() != null) {
+                        cell.setCellValue(r.getEmpleado().getNombres()
+                                + " " + r.getEmpleado().getApellidos());
+                    } else {
+                        cell.setCellValue("-");
+                    }
+                    break;
+                case "salario":
+                    if (r.getEmpleado() != null) {
+                        cell.setCellValue(r.getEmpleado().getSalario());
+                    } else {
+                        cell.setCellValue("-");
+                    }
+                    break;
+                case "usuario":
+                    if (r.getUsuario() != null) {
+                        cell.setCellValue(r.getUsuario().getUsername());
+                    } else {
+                        cell.setCellValue("-");
+                    }
+                    break;
+                case "departamento":
+                    if (r.getDepartamento() != null) {
+                        cell.setCellValue(r.getDepartamento().getNombre());
+                    } else {
+                        cell.setCellValue("-");
+                    }
+                    break;
+                case "fecha":
+                    cell.setCellValue(r.getFechaCreacion().toString());
+                    break;
+                default:
+                    cell.setCellValue("-");
+                    break;
+            }
+        }
+    }
+
+    // Ajustar tamaño automático de columnas
+    for (int i = 0; i < campos.size(); i++) {
+        sheet.autoSizeColumn(i);
+    }
+
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    workbook.write(out);
+    workbook.close();
+
+    return new ByteArrayInputStream(out.toByteArray());
+}
 
 
 }
