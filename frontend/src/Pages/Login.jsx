@@ -3,40 +3,67 @@ import "../styless/Login.css";
 import googleIcon from "../assets/loginimage/googleico.png";
 import githubIcon from "../assets/loginimage/githubico.png";
 import facebookIcon from "../assets/loginimage/facebookico.png";
-import { login } from "../services/authService";
+import { login, register } from "../services/authService";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState(""); // solo para errores
+  const [successMsg, setSuccessMsg] = useState("");
+  const [isLogin, setIsLogin] = useState(true); // true = login, false = register
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg(""); // limpia mensaje anterior
+    setSuccessMsg("");
 
     try {
-      const result = await login(email, password);
-      console.log("✅ Login exitoso:", result);
-
-      // Notificación tipo toast simple
-      alert("Inicio de sesión exitoso 👋 Bienvenido " + email);
-
-      // Redirigir o limpiar formulario
-      // window.location.href = "/dashboard";
-      setEmail("");
-      setPassword("");
+      if (isLogin) {
+        // Lógica de Login
+        const result = await login(email, password);
+        console.log("✅ Login exitoso:", result);
+        setSuccessMsg("Inicio de sesión exitoso 👋 Bienvenido " + email);
+        setEmail("");
+        setPassword("");
+      } else {
+        // Lógica de Registro
+        if (password !== confirmPassword) {
+          setErrorMsg("Las contraseñas no coinciden");
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMsg("La contraseña debe tener al menos 6 caracteres");
+          return;
+        }
+        const result = await register(email, password);
+        console.log("✅ Registro exitoso:", result);
+        setSuccessMsg("¡Registro exitoso! Por favor inicia sesión");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setIsLogin(true), 2000); // Cambiar a login después de 2 segundos
+      }
     } catch (error) {
-      // Mostrar mensaje de error debajo del formulario
       setErrorMsg(error.message);
-      console.error("❌ Error en login:", error.message);
+      console.error("❌ Error:", error.message);
     }
+  };
+
+  const toggleForm = () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setIsLogin(!isLogin);
   };
 
   return (
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <h2>Login</h2>
+          <h2>{isLogin ? "Login" : "Registro"}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -60,33 +87,64 @@ function Login() {
             required
           />
 
-          <div className="login-options">
-            <a href="#">¿Olvidaste tu contraseña?</a>
-          </div>
+          {!isLogin && (
+            <>
+              <label htmlFor="confirmPassword">Confirmar Contraseña:</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </>
+          )}
 
-          <button type="submit" className="login-button">
-            Iniciar sesión
+          {isLogin && (
+            <div className="login-options">
+              <a href="#">¿Olvidaste tu contraseña?</a>
+            </div>
+          )}
+
+          <button type="submit" className="login-btn">
+            {isLogin ? "Iniciar sesión" : "Registrarse"}
           </button>
 
-          {/* Mensaje solo si hay error */}
+          {/* Mensaje de error */}
           {errorMsg && <p className="login-error">{errorMsg}</p>}
+          
+          {/* Mensaje de éxito */}
+          {successMsg && <p className="login-success">{successMsg}</p>}
 
-          <div className="divider">o</div>
+          {isLogin && (
+            <>
+              <div className="divider">o</div>
 
-          <div className="social-login">
-            <button type="button" className="social-btn google">
-              <img src={googleIcon} alt="Google" />
-            </button>
-            <button type="button" className="social-btn github">
-              <img src={githubIcon} alt="GitHub" />
-            </button>
-            <button type="button" className="social-btn facebook">
-              <img src={facebookIcon} alt="Facebook" />
-            </button>
-          </div>
+              <div className="social-login">
+                <button type="button" className="social-btn google">
+                  <img src={googleIcon} alt="Google" />
+                </button>
+                <button type="button" className="social-btn github">
+                  <img src={githubIcon} alt="GitHub" />
+                </button>
+                <button type="button" className="social-btn facebook">
+                  <img src={facebookIcon} alt="Facebook" />
+                </button>
+              </div>
+            </>
+          )}
 
           <p className="signup-text">
-            ¿No tienes cuenta? <a href="#">Regístrate</a>
+            {isLogin ? (
+              <>
+                ¿No tienes cuenta? <a href="#" onClick={(e) => { e.preventDefault(); toggleForm(); }}>Regístrate</a>
+              </>
+            ) : (
+              <>
+                ¿Ya tienes cuenta? <a href="#" onClick={(e) => { e.preventDefault(); toggleForm(); }}>Inicia sesión</a>
+              </>
+            )}
           </p>
         </form>
       </div>
