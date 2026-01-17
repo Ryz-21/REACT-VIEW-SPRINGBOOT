@@ -9,16 +9,14 @@ export const login = async (email, password) => {
       body: JSON.stringify({ email, password }),
     });
 
-    const resultText = await response.text(); // Siempre obtiene el texto de respuesta
+    const result = await response.json();
 
     if (!response.ok) {
-      // Si el backend devuelve 401 o 404, lanza error con el texto exacto
-      throw new Error(resultText);
+      throw new Error(result.message || result.error || "Error en login");
     }
 
-    return resultText; // Login exitoso
+    return result; // { token, message, usuario }
   } catch (error) {
-    // Error general de conexión o backend caído
     if (error.message.includes("Failed to fetch")) {
       throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.");
     }
@@ -26,24 +24,22 @@ export const login = async (email, password) => {
   }
 };
 
-export const register = async (email, password) => {
+export const register = async (username, email, password) => {
   try {
     const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, email, password }),
     });
 
-    const resultText = await response.text(); // Siempre obtiene el texto de respuesta
+    const result = await response.json();
 
     if (!response.ok) {
-      // Si el backend devuelve error, lanza error con el texto exacto
-      throw new Error(resultText);
+      throw new Error(result.message || result.error || "Error en registro");
     }
 
-    return resultText; // Registro exitoso
+    return result; // { message, usuario }
   } catch (error) {
-    // Error general de conexión o backend caído
     if (error.message.includes("Failed to fetch")) {
       throw new Error("No se pudo conectar con el servidor. Verifica tu conexión.");
     }

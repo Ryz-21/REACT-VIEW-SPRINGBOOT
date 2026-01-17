@@ -17,7 +17,23 @@ public class SecurityConfig {
         //htppsecurity es una clase que permite configurar la seguridad de la aplicacion
         http
             .csrf(csrf -> csrf.disable())//csrf es un ataque que consiste en enviar peticiones no autorizadas desde un usuario autenticado
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()); //autoriza todas las peticiones sin autenticacion
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**", "/oauth2/**").permitAll() // Permitir auth endpoints
+                .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler((request, response, authentication) -> {
+                    // Redirigir a los endpoints de success
+                    String registrationId = ((org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+                    if ("google".equals(registrationId)) {
+                        response.sendRedirect("/api/auth/oauth2/success");
+                    } else if ("facebook".equals(registrationId)) {
+                        response.sendRedirect("/api/auth/oauth2/facebook/success");
+                    } else if ("github".equals(registrationId)) {
+                        response.sendRedirect("/api/auth/oauth2/github/success");
+                    }
+                })
+            );
         return http.build();//construye el objeto de seguridad
     }
 }

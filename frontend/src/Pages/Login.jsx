@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "../styless/Login.css";
 import googleIcon from "../assets/loginimage/googleico.png";
 import githubIcon from "../assets/loginimage/githubico.png";
 import facebookIcon from "../assets/loginimage/facebookico.png";
 import { login, register } from "../services/authService";
+import { useAuth } from "../context/useAuth";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -12,6 +14,17 @@ function Login() {
   const [errorMsg, setErrorMsg] = useState(""); // solo para errores
   const [successMsg, setSuccessMsg] = useState("");
   const [isLogin, setIsLogin] = useState(true); // true = login, false = register
+  const { login: authLogin } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      authLogin(token);
+      navigate('/home');
+    }
+  }, [searchParams, authLogin, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,9 +36,8 @@ function Login() {
         // Lógica de Login
         const result = await login(email, password);
         console.log("✅ Login exitoso:", result);
-        setSuccessMsg("Inicio de sesión exitoso 👋 Bienvenido " + email);
-        setEmail("");
-        setPassword("");
+        authLogin(result.token);
+        navigate('/home');
       } else {
         // Lógica de Registro
         if (password !== confirmPassword) {
@@ -36,7 +48,7 @@ function Login() {
           setErrorMsg("La contraseña debe tener al menos 6 caracteres");
           return;
         }
-        const result = await register(email, password);
+        const result = await register(email, email, password); // username = email por simplicidad
         console.log("✅ Registro exitoso:", result);
         setSuccessMsg("¡Registro exitoso! Por favor inicia sesión");
         setEmail("");
@@ -48,6 +60,10 @@ function Login() {
       setErrorMsg(error.message);
       console.error("❌ Error:", error.message);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 
   const toggleForm = () => {
@@ -122,7 +138,7 @@ function Login() {
               <div className="divider">o</div>
 
               <div className="social-login">
-                <button type="button" className="social-btn google">
+                <button type="button" className="social-btn google" onClick={handleGoogleLogin}>
                   <img src={googleIcon} alt="Google" />
                 </button>
                 <button type="button" className="social-btn github">

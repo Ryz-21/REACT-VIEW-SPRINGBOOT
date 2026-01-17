@@ -1,10 +1,10 @@
 package backend.backend.controller;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,11 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import backend.backend.Service.EmailService;
+import backend.backend.Service.AuthService;
 import backend.backend.dto.UsuarioRequest;
-import backend.backend.model.Usuario;
-import backend.backend.repository.UsuarioRepository;
-
+import backend.backend.dto.AuthResponse;
+import backend.backend.dto.ErrorResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,241 +25,150 @@ import backend.backend.repository.UsuarioRepository;
 public class AuthController {
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private AuthService authService;
 
-    @Autowired
-    private EmailService emailService;
-
-    //cambiamos RequestParam por RequestBody para mayor seguridad
-    //  Requestparam sirve para enviar datos por la URL, lo cual no es seguro para datos sensibles como contraseñas.
-    // En cambio, RequestBody permite enviar datos en el cuerpo de la solicitud HTTP, protegiendo mejor la información sensible.
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> request) {
-    String email = request.get("email");
-    String password = request.get("password");
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String password = request.get("password");
 
-    if (email == null || password == null) {
-        return ResponseEntity.badRequest().body("Faltan campos requeridos (email, password)");
+            AuthResponse authResponse = authService.validarLogin(email, password);
+            return ResponseEntity.ok(authResponse);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Autenticación fallida",
+                e.getMessage(),
+                e.getMessage().contains("no encontrado") ? 404 : 401
+            );
+            int statusCode = e.getMessage().contains("no encontrado") ? 404 : 401;
+            return ResponseEntity.status(statusCode).body(error);
+        }
     }
-
-    return usuarioRepository.findByEmail(email)
-            .map(usuario -> {
-                if (usuario.getPassword().equals(password)) {
-                    return ResponseEntity.ok("Login exitoso. Bienvenido, " + usuario.getUsername());
-                } else {
-                    return ResponseEntity.status(401).body("Contraseña incorrecta");
-                }
-            })
-            .orElse(ResponseEntity.status(404).body("Usuario no encontrado"));
-}
 
 
 @PostMapping("/register")
-public ResponseEntity<String> register(@RequestBody UsuarioRequest request) {
-    String username = request.getUsername();
-    String email = request.getEmail();
-    String password = request.getPassword();
-
-    if (username == null || email == null || password == null) {
-        return ResponseEntity.badRequest().body("Faltan campos requeridos");
+public ResponseEntity<?> register(@RequestBody UsuarioRequest request) {
+    try {
+        AuthResponse authResponse = authService.registrarUsuario(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
+    } catch (IllegalArgumentException e) {
+        ErrorResponse error = new ErrorResponse("Registro fallido", e.getMessage(), 400);
+        return ResponseEntity.badRequest().body(error);
     }
-
-    // Verificar si el email ya está registrado
-    if (usuarioRepository.findByEmail(email).isPresent()) {
-        return ResponseEntity.badRequest().body("El correo ya está registrado");
-    }
-
-    // Verificar si el username ya está en uso
-    boolean usernameExists = usuarioRepository.findAll()
-            .stream()
-            .anyMatch(u -> u.getUsername().equalsIgnoreCase(username));
-
-    if (usernameExists) {
-        return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso");
-    }
-
-    // Crear nuevo usuario
-    Usuario nuevoUsuario = Usuario.builder()
-            .username(username)
-            .email(email)
-            .password(password)
-            .rol(Usuario.Rol.USER)
-            .build();
-
-    usuarioRepository.save(nuevoUsuario);
-
-    return ResponseEntity.ok("Usuario registrado con éxito");
 }
 
 
     // RECUPERAR CONTRASEÑA
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
-     String email = request.get("email");
-
-    if (email == null) {
-        return ResponseEntity.badRequest().body("El campo 'email' es obligatorio.");
-    }
-
-    var usuario = usuarioRepository.findAll()
-            .stream()
-            .filter(u -> u.getEmail().equalsIgnoreCase(email))
-            .findFirst();
-
-    if (usuario.isEmpty()) {
-        return ResponseEntity.badRequest().body("No existe un usuario con ese correo.");
-    }
-
-    Usuario user = usuario.get();
-
-    // Generar código alfanumérico de 6 caracteres
-    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    StringBuilder verificationCode = new StringBuilder();
-    for (int i = 0; i < 6; i++) {
-        int index = (int) (Math.random() * chars.length());
-        verificationCode.append(chars.charAt(index));
-    }
-
-    user.setResetToken(verificationCode.toString());
-    user.setResetTokenExpiration(LocalDateTime.now().plusMinutes(10)); // expira en 10 minutos
-    usuarioRepository.save(user);
-
-    // Enviar correo con el código
-    emailService.enviarCorreo(
-        email,
-        "Código de recuperación de contraseña",
-        "Hola " + user.getUsername() + ",\n\nTu código de recuperación es: " + verificationCode +
-        "\n\nEste código expira en 10 minutos."
-    );
-
-    return ResponseEntity.ok("Se envió un código de verificación al correo.");
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            authService.generarCodigoRecuperacion(email);
+            
+            AuthResponse response = new AuthResponse(
+                null,
+                "Se envió un código de verificación al correo.",
+                null
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse error = new ErrorResponse(
+                "Error",
+                e.getMessage(),
+                e.getMessage().contains("no existe") ? 404 : 400
+            );
+            int statusCode = e.getMessage().contains("no existe") ? 404 : 400;
+            return ResponseEntity.status(statusCode).body(error);
+        }
     } 
     //  RESTABLECER CONTRASEÑA
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String newPassword = request.get("newPassword");
-
-        if (token == null || newPassword == null) {
-            return ResponseEntity.badRequest().body(" Faltan campos requeridos (token, newPassword)");
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            String newPassword = request.get("newPassword");
+            
+            authService.restablecerContraseña(token, newPassword);
+            
+            AuthResponse response = new AuthResponse(
+                null,
+                "Contraseña restablecida con éxito.",
+                null
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse error = new ErrorResponse("Error", e.getMessage(), 400);
+            return ResponseEntity.badRequest().body(error);
         }
-
-        var usuario = usuarioRepository.findAll()
-                .stream()
-                .filter(u -> token.equals(u.getResetToken()))
-                .findFirst();
-
-        if (usuario.isEmpty()) {
-            return ResponseEntity.badRequest().body(" Token inválido o expirado.");
-        }
-
-        Usuario user = usuario.get();
-        if (user.getResetTokenExpiration().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body(" Token expirado.");
-        }
-
-        user.setPassword(newPassword);
-        user.setResetToken(null);
-        user.setResetTokenExpiration(null);
-        usuarioRepository.save(user);
-
-        return ResponseEntity.ok(" Contraseña restablecida con éxito.");
     }
 
 @PostMapping("/verify-code")
-public ResponseEntity<String> verifyCodeAndResetPassword(@RequestBody Map<String, String> request) {
-    String code = request.get("code");
-    String newPassword = request.get("newPassword");
-
-    if (code == null || newPassword == null) {
-        return ResponseEntity.badRequest().body("Faltan campos requeridos (code, newPassword)");
+public ResponseEntity<?> verifyCodeAndResetPassword(@RequestBody Map<String, String> request) {
+    try {
+        String code = request.get("code");
+        String newPassword = request.get("newPassword");
+        
+        authService.verificarCodigoYRestablecer(code, newPassword);
+        
+        AuthResponse response = new AuthResponse(
+            null,
+            "Contraseña restablecida correctamente.",
+            null
+        );
+        return ResponseEntity.ok(response);
+    } catch (IllegalArgumentException e) {
+        ErrorResponse error = new ErrorResponse("Error", e.getMessage(), 400);
+        return ResponseEntity.badRequest().body(error);
     }
-
-    var usuario = usuarioRepository.findAll()
-            .stream()
-            .filter(u -> code.equals(u.getResetToken()))
-            .findFirst();
-
-    if (usuario.isEmpty()) {
-        return ResponseEntity.badRequest().body("Código inválido o expirado.");
-    }
-
-    Usuario user = usuario.get();
-
-    if (user.getResetTokenExpiration().isBefore(LocalDateTime.now())) {
-        return ResponseEntity.badRequest().body("El código ha expirado.");
-    }
-
-    user.setPassword(newPassword);
-    user.setResetToken(null);
-    user.setResetTokenExpiration(null);
-    usuarioRepository.save(user);
-
-    return ResponseEntity.ok("Contraseña restablecida correctamente.");
 }
 //inicar sesion con google
   @GetMapping("/oauth2/success")
-    public String success(@AuthenticationPrincipal OAuth2User oauthUser) {
-        String email = oauthUser.getAttribute("email");
-        String name = oauthUser.getAttribute("name");
+    public ResponseEntity<Void> success(@AuthenticationPrincipal OAuth2User oauthUser) {
+        try {
+            String email = oauthUser.getAttribute("email");
+            String name = oauthUser.getAttribute("name");
 
-        // Buscar si ya existe el usuario
-        var usuarioExistente = usuarioRepository.findByEmail(email);
+            AuthResponse authResponse = authService.procesarLoginOAuth2(email, name);
+            String token = authResponse.getToken();
 
-        if (usuarioExistente.isEmpty()) {
-            // Registrar automáticamente si no existe
-            Usuario nuevoUsuario = Usuario.builder()
-                .username(name)
-                .email(email)
-                .password("oauth2") // puedes dejarlo vacío o marcador
-                .rol(Usuario.Rol.USER)
-                .build();
-
-            usuarioRepository.save(nuevoUsuario);
+            // Redirigir al frontend con el token
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?token=" + token).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?error=" + e.getMessage()).build();
         }
-
-        return "Login con Google exitoso. Bienvenido " + name + " (" + email + ")";
     }
 //inciar sesion con facebook
     @GetMapping("/oauth2/facebook/success")
-    public String facebookSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
-        String email = oauthUser.getAttribute("email");
-        String name = oauthUser.getAttribute("name");
-        // Buscar si ya existe el usuario
-        var usuarioExistente = usuarioRepository.findByEmail(email);
-        if (usuarioExistente.isEmpty()) {
-            // Registrar automáticamente si no existe
-            Usuario nuevoUsuario = Usuario.builder()
-                .username(name)
-                .email(email)
-                .password("oauth2") // puedes dejarlo vacío o marcador
-                .rol(Usuario.Rol.USER)
-                .build();
+    public ResponseEntity<Void> facebookSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
+        try {
+            String email = oauthUser.getAttribute("email");
+            String name = oauthUser.getAttribute("name");
 
-            usuarioRepository.save(nuevoUsuario);
+            AuthResponse authResponse = authService.procesarLoginOAuth2(email, name);
+            String token = authResponse.getToken();
+
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?token=" + token).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?error=" + e.getMessage()).build();
         }
-        return "Login con Facebook exitoso. Bienvenido " + name + " (" + email + ")";
     }
 
     // inicar sesion con github
     @GetMapping("/oauth2/github/success")
-    public String githubSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
-        String email = oauthUser.getAttribute("email");
-        String name = oauthUser.getAttribute("name");
-        // Buscar si ya existe el usuario
-        var usuarioExistente = usuarioRepository.findByEmail(email);
-        if (usuarioExistente.isEmpty()) {
-            // Registrar automáticamente si no existe
-            Usuario nuevoUsuario = Usuario.builder()
-                .username(name)
-                .email(email)
-                .password("oauth2") // puedes dejarlo vacío o marcador
-                .rol(Usuario.Rol.USER)
-                .build();
-            usuarioRepository.save(nuevoUsuario);
+    public ResponseEntity<Void> githubSuccess(@AuthenticationPrincipal OAuth2User oauthUser) {
+        try {
+            String email = oauthUser.getAttribute("email");
+            String name = oauthUser.getAttribute("name");
+
+            AuthResponse authResponse = authService.procesarLoginOAuth2(email, name);
+            String token = authResponse.getToken();
+
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?token=" + token).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(302).header("Location", "http://localhost:3000/login?error=" + e.getMessage()).build();
         }
-        return "Login con GitHub exitoso. Bienvenido " + name + " (" + email + ")";
     }
     
 }
