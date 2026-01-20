@@ -26,41 +26,57 @@ function Login() {
     }
   }, [searchParams, authLogin, navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg(""); // limpia mensaje anterior
-    setSuccessMsg("");
 
-    try {
-      if (isLogin) {
-        // Lógica de Login
-        const result = await login(email, password);
-        console.log("✅ Login exitoso:", result);
-        authLogin(result.token);
-        navigate('/home');
-      } else {
-        // Lógica de Registro
-        if (password !== confirmPassword) {
-          setErrorMsg("Las contraseñas no coinciden");
-          return;
-        }
-        if (password.length < 6) {
-          setErrorMsg("La contraseña debe tener al menos 6 caracteres");
-          return;
-        }
-        const result = await register(email, email, password); // username = email por simplicidad
-        console.log("✅ Registro exitoso:", result);
-        setSuccessMsg("¡Registro exitoso! Por favor inicia sesión");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setTimeout(() => setIsLogin(true), 2000); // Cambiar a login después de 2 segundos
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setErrorMsg("");
+  setSuccessMsg("");
+
+  try {
+    if (isLogin) {
+
+      // 🔴 USUARIO HARDCODEADO SOLO PARA PRUEBAS
+      if (email === "administrador" && password === "administrador") {
+        console.log("🟢 Login admin de prueba");
+        
+        // Token falso solo para pruebas
+        authLogin("ADMIN_FAKE_TOKEN");
+        navigate("/home");
+        return;
       }
-    } catch (error) {
-      setErrorMsg(error.message);
-      console.error("❌ Error:", error.message);
+
+      // 🔵 LOGIN NORMAL (BACKEND)
+      const result = await login(email, password);
+      console.log("✅ Login exitoso:", result);
+      authLogin(result.token);
+      navigate("/home");
+
+    } else {
+      // REGISTRO
+      if (password !== confirmPassword) {
+        setErrorMsg("Las contraseñas no coinciden");
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMsg("La contraseña debe tener al menos 6 caracteres");
+        return;
+      }
+
+      const result = await register(email, email, password);
+      console.log("✅ Registro exitoso:", result);
+      setSuccessMsg("¡Registro exitoso! Por favor inicia sesión");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setIsLogin(true), 2000);
     }
-  };
+  } catch (error) {
+    setErrorMsg(error.message);
+    console.error("❌ Error:", error.message);
+  }
+};
+
 
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
