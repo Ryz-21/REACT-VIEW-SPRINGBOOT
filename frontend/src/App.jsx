@@ -1,10 +1,36 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./Pages/Login";
-import Home from "./Pages/Home";
+import Dashboard from "./Pages/Dashboard";
+import DepartamentosList from "./components/departamentos/DepartamentosList";
+import EmpleadosList from "./components/empleados/EmpleadosList";
+import MainLayout from "./components/layout/MainLayout";
 import { AuthProvider } from "./context/AuthProvider";
 import { useAuth } from "./context/useAuth";
 
-function App() {
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated()) {
+    return (
+      <Routes>
+        <Route path="*" element={<Login />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/departamentos" element={<DepartamentosList />} />
+        <Route path="/empleados" element={<EmpleadosList />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default function App() {
   return (
     <Router>
       <AuthProvider>
@@ -13,69 +39,3 @@ function App() {
     </Router>
   );
 }
-
-function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <Routes>
-      {/* Ruta login */}
-      <Route path="/login" element={<Login />} />
-      
-      {/* Rutas autenticadas con MainLayout */}
-      <Route
-        path="/home"
-        element={
-          isAuthenticated() ? (
-            <MainLayout>
-              <Home />
-            </MainLayout>
-          ) : (
-            <Login />
-          )
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          isAuthenticated() ? (
-            <MainLayout>
-              <div>Dashboard</div>
-            </MainLayout>
-          ) : (
-            <Login />
-          )
-        }
-      />
-      <Route
-        path="/departamentos"
-        element={
-          isAuthenticated() ? (
-            <MainLayout>
-              <div>Departamentos</div>
-            </MainLayout>
-          ) : (
-            <Login />
-          )
-        }
-      />
-      <Route
-        path="/empleados"
-        element={
-          isAuthenticated() ? (
-            <MainLayout>
-              <div>Empleados</div>
-            </MainLayout>
-          ) : (
-            <Login />
-          )
-        }
-      />
-      
-      {/* Ruta raíz - por defecto muestra login */}
-      <Route path="/" element={<Login />} />
-    </Routes>
-  );
-}
-
-export default App;
