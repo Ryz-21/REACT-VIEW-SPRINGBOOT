@@ -1,59 +1,37 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styless/Login.css";
 import googleIcon from "../assets/loginimage/googleico.png";
 import githubIcon from "../assets/loginimage/githubico.png";
 import facebookIcon from "../assets/loginimage/facebookico.png";
-import { login, register } from "../services/authService";
 import { useAuth } from "../context/useAuth";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState(""); // solo para errores
+  const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const [isLogin, setIsLogin] = useState(true); // true = login, false = register
+  const [isLogin, setIsLogin] = useState(true);
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      authLogin(token);
-      navigate('/home');
-    }
-  }, [searchParams, authLogin, navigate]);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
 
-
-
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setErrorMsg("");
-  setSuccessMsg("");
-
-  try {
     if (isLogin) {
-
-      // 🔴 USUARIO HARDCODEADO SOLO PARA PRUEBAS
-      if (email === "administrador" && password === "administrador") {
-        console.log("🟢 Login admin de prueba");
-        
-        // Token falso solo para pruebas
-        authLogin("ADMIN_FAKE_TOKEN");
+      // Modo prueba: cualquier email/contraseña funciona
+      if (email && password) {
+        console.log(" Login exitoso");
+        authLogin("DEMO_TOKEN_DEV");
         navigate("/home");
-        return;
+      } else {
+        setErrorMsg("Por favor completa todos los campos");
       }
-
-      // 🔵 LOGIN NORMAL (BACKEND)
-      const result = await login(email, password);
-      console.log("✅ Login exitoso:", result);
-      authLogin(result.token);
-      navigate("/home");
-
     } else {
-      // REGISTRO
+      // Registro
       if (password !== confirmPassword) {
         setErrorMsg("Las contraseñas no coinciden");
         return;
@@ -62,24 +40,17 @@ function Login() {
         setErrorMsg("La contraseña debe tener al menos 6 caracteres");
         return;
       }
-
-      const result = await register(email, email, password);
-      console.log("✅ Registro exitoso:", result);
-      setSuccessMsg("¡Registro exitoso! Por favor inicia sesión");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setTimeout(() => setIsLogin(true), 2000);
+      if (email) {
+        setSuccessMsg(" Registro exitoso! Ahora inicia sesión");
+        setTimeout(() => {
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
+          setIsLogin(true);
+          setSuccessMsg("");
+        }, 1500);
+      }
     }
-  } catch (error) {
-    setErrorMsg(error.message);
-    console.error("❌ Error:", error.message);
-  }
-};
-
-
-  const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 
   const toggleForm = () => {
@@ -145,7 +116,7 @@ function Login() {
 
           {/* Mensaje de error */}
           {errorMsg && <p className="login-error">{errorMsg}</p>}
-          
+
           {/* Mensaje de éxito */}
           {successMsg && <p className="login-success">{successMsg}</p>}
 
@@ -154,13 +125,13 @@ function Login() {
               <div className="divider">o</div>
 
               <div className="social-login">
-                <button type="button" className="social-btn google" onClick={handleGoogleLogin}>
+                <button type="button" className="social-btn google" disabled>
                   <img src={googleIcon} alt="Google" />
                 </button>
-                <button type="button" className="social-btn github">
+                <button type="button" className="social-btn github" disabled>
                   <img src={githubIcon} alt="GitHub" />
                 </button>
-                <button type="button" className="social-btn facebook">
+                <button type="button" className="social-btn facebook" disabled>
                   <img src={facebookIcon} alt="Facebook" />
                 </button>
               </div>

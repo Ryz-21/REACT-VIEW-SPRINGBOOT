@@ -1,78 +1,44 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/useAuth";
-import "../../styless/Sidebar.css";
+import { useState } from "react";
+import SidebarItem from "../ui/SidebarItem";
 
 export default function Sidebar({ onSectionChange }) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+    const [active, setActive] = useState("dashboard");
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+    const handleClick = (section) => {
+        setActive(section);
+        onSectionChange(section);
+    };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+    return (
+        <aside className="w-64 min-h-screen bg-gray-900 text-white flex flex-col">
+            
+            {/* Logo / título */}
+            <div className="px-6 py-4 text-xl font-bold border-b border-gray-700">
+                Mi Sistema
+            </div>
 
-  const handleSectionClick = (section) => {
-    setActiveSection(section);
-    if (onSectionChange) {
-      onSectionChange(section);
-    }
-  };
+            {/* Menú */}
+            <nav className="flex-1 px-3 py-4 space-y-2">
+                <SidebarItem
+                    icon="📊"
+                    label="Dashboard"
+                    active={active === "dashboard"}
+                    onClick={() => handleClick("dashboard")}
+                />
+                <SidebarItem
+                    icon="🏢"
+                    label="Departamentos"
+                    active={active === "departamentos"}
+                    onClick={() => handleClick("departamentos")}
+                />
+                <SidebarItem
+                    icon="👥"
+                    label="Empleados"
+                    active={active === "empleados"}
+                    onClick={() => handleClick("empleados")}
+                />
+            </nav>
 
-  return (
-    <div className={`sidebar ${isOpen ? "open" : "closed"}`}>
-      {/* Botón para cerrar/abrir */}
-      <button className="sidebar-toggle" onClick={toggleSidebar}>
-        {isOpen ? "✕" : "☰"}
-      </button>
-
-      {/* Header del Sidebar */}
-      {isOpen && (
-        <div className="sidebar-header">
-          <h2>Menu</h2>
-          <p className="user-info">Usuario: {user?.username}</p>
-        </div>
-      )}
-
-      {/* Navegación */}
-      <nav className="sidebar-nav">
-        <div
-          className={`nav-item ${activeSection === "dashboard" ? "active" : ""}`}
-          onClick={() => handleSectionClick("dashboard")}
-        >
-          <span className="nav-icon">📊</span>
-          {isOpen && <span>Dashboard</span>}
-        </div>
-
-        <div
-          className={`nav-item ${activeSection === "departamentos" ? "active" : ""}`}
-          onClick={() => handleSectionClick("departamentos")}
-        >
-          <span className="nav-icon">🏢</span>
-          {isOpen && <span>Departamentos</span>}
-        </div>
-
-        <div
-          className={`nav-item ${activeSection === "empleados" ? "active" : ""}`}
-          onClick={() => handleSectionClick("empleados")}
-        >
-          <span className="nav-icon">👥</span>
-          {isOpen && <span>Empleados</span>}
-        </div>
-      </nav>
-
-      {/* Logout */}
-      {isOpen && (
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
-      )}
-    </div>
-  );
+        </aside>
+    );
 }

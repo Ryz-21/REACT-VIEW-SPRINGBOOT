@@ -3,23 +3,19 @@ import Sidebar from "../components/layout/Sidebar.jsx";
 import Dashboard from "./Dashboard.jsx";
 import DepartamentosList from "../components/departamentos/DepartamentosList.jsx";
 import EmpleadosList from "../components/empleados/EmpleadosList.jsx";
-import "../styless/Home.css";
 
 export default function Home() {
-    const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeSection, setActiveSection] = useState("dashboard");
 
-    const handleSectionChange = (section) => {
-        setActiveSection(section);
-    };
+  return (
+    <div className="flex h-screen bg-slate-100">
+      <Sidebar onSectionChange={setActiveSection} />
 
-    return (
-        <div className="home-container">
-            <Sidebar onSectionChange={handleSectionChange} />
-            <div className="main-content">
-                {activeSection === "dashboard" && <Dashboard />}
-                {activeSection === "departamentos" && <DepartamentosList />}
-                {activeSection === "empleados" && <EmpleadosList />}
-            </div>
-        </div>
-    );
+      <main className="flex-1 p-6 overflow-y-auto">
+        {activeSection === "dashboard" && <Dashboard />}
+        {activeSection === "departamentos" && <DepartamentosList />}
+        {activeSection === "empleados" && <EmpleadosList />}
+      </main>
+    </div>
+  );
 }
