@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
 import DepartamentosList from "./components/departamentos/DepartamentosList";
-import EmpleadosList from "./components/empleados/EmpleadosList";
+import EmpleadosPage from "./components/empleados/EmpleadosPage";
 import MainLayout from "./components/layout/MainLayout";
 import { AuthProvider } from "./context/AuthProvider";
 import { useAuth } from "./context/useAuth";
@@ -23,7 +23,7 @@ function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/departamentos" element={<DepartamentosList />} />
-        <Route path="/empleados" element={<EmpleadosList />} />
+        <Route path="/empleados" element={<EmpleadosPage />} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Route>
     </Routes>
