@@ -5,6 +5,7 @@ import {
   Users,
   LogOut,
   Zap,
+  FileText,
 } from "lucide-react";
 import SidebarItem from "../ui/SidebarItem";
 import { useAuth } from "../../context/useAuth";
@@ -30,6 +31,11 @@ export default function Sidebar() {
       icon: Users,
       path: "/empleados",
     },
+    {
+      label: "Reportes",
+      icon: FileText,
+      path: "/reportes",
+    },
   ];
 
   const handleLogout = () => {
@@ -39,7 +45,7 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col shadow-2xl border-r border-purple-500/30">
-      
+
       {/* Header */}
       <div className="px-6 py-8 border-b border-purple-500/20 bg-gradient-to-r from-slate-900 to-slate-800">
         <div className="flex items-center gap-3">
