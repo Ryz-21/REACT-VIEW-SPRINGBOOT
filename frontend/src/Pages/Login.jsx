@@ -4,8 +4,10 @@ import googleIcon from "../assets/loginimage/googleico.png";
 import githubIcon from "../assets/loginimage/githubico.png";
 import facebookIcon from "../assets/loginimage/facebookico.png";
 import { useAuth } from "../context/useAuth";
+import * as authService from "../services/authService";
 
 function Login() {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,38 +17,59 @@ function Login() {
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    if (isLogin) {
-      if (email && password) {
-        console.log(" Login exitoso");
-        authLogin("DEMO_TOKEN_DEV");
-        navigate("/home");
+    try {
+      if (isLogin) {
+        if (!email || !password) {
+          setErrorMsg("Por favor completa todos los campos");
+          return;
+        }
+
+        const result = await authService.login(email, password);
+        console.log("Login exitoso", result);
+
+        // Asumiendo que result trae { token, usuario, ... }
+        if (result.token) {
+          authLogin(result.token, result.usuario || { email });
+          navigate("/home"); // O dashboard
+        } else {
+          setErrorMsg("No se recibió token del servidor");
+        }
+
       } else {
-        setErrorMsg("Por favor completa todos los campos");
-      }
-    } else {
-      if (password !== confirmPassword) {
-        setErrorMsg("Las contraseñas no coinciden");
-        return;
-      }
-      if (password.length < 6) {
-        setErrorMsg("La contraseña debe tener al menos 6 caracteres");
-        return;
-      }
-      if (email) {
-        setSuccessMsg(" Registro exitoso! Ahora inicia sesión");
+        // REGISTRO
+        if (!username || !email || !password || !confirmPassword) {
+          setErrorMsg("Por favor completa todos los campos");
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMsg("Las contraseñas no coinciden");
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMsg("La contraseña debe tener al menos 6 caracteres");
+          return;
+        }
+
+        await authService.register(username, email, password);
+        setSuccessMsg("¡Registro exitoso! Ahora inicia sesión");
+
         setTimeout(() => {
           setEmail("");
           setPassword("");
           setConfirmPassword("");
+          setUsername("");
           setIsLogin(true);
           setSuccessMsg("");
-        }, 1500);
+        }, 2000);
       }
+    } catch (error) {
+      console.error("Error de autenticación:", error);
+      setErrorMsg(error.message || "Ocurrió un error. Inténtalo de nuevo.");
     }
   };
 
@@ -56,6 +79,7 @@ function Login() {
     setEmail("");
     setPassword("");
     setConfirmPassword("");
+    setUsername("");
     setIsLogin(!isLogin);
   };
 
@@ -69,6 +93,24 @@ function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+
+          {!isLogin && (
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-600 mb-1">
+                Nombre de Usuario
+              </label>
+              <input
+                id="username"
+                type="text"
+                placeholder="Tu nombre"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-gray-50 text-gray-800"
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-1">
               Email

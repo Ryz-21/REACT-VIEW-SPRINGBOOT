@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080/api/departamentos";
+const API_URL = "http://localhost:8080/api/reportes";
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
@@ -8,47 +8,47 @@ const getAuthHeaders = () => {
     };
 };
 
-export const getAllDepartamentos = async () => {
+export const getAllReportes = async () => {
     const response = await fetch(API_URL, {
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error("Error al obtener departamentos");
+    if (!response.ok) throw new Error("Error al obtener reportes");
     return await response.json();
 };
 
-export const getDepartamentoById = async (id) => {
+export const getReporteById = async (id) => {
     const response = await fetch(`${API_URL}/${id}`, {
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error("Error al obtener el departamento");
+    if (!response.ok) throw new Error("Error al obtener el reporte");
     return await response.json();
 };
 
-export const createDepartamento = async (departamento) => {
+export const createReporte = async (reporte) => {
     const response = await fetch(API_URL, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(departamento),
+        body: JSON.stringify(reporte),
     });
-    if (!response.ok) throw new Error("Error al crear departamento");
+    if (!response.ok) throw new Error("Error al crear reporte");
     return await response.json();
 };
 
-export const updateDepartamento = async (id, departamento) => {
+export const updateReporte = async (id, reporte) => {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify(departamento),
+        body: JSON.stringify(reporte),
     });
-    if (!response.ok) throw new Error("Error al actualizar departamento");
+    if (!response.ok) throw new Error("Error al actualizar reporte");
     return await response.json();
 };
 
-export const deleteDepartamento = async (id) => {
+export const deleteReporte = async (id) => {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error("Error al eliminar departamento");
+    if (!response.ok) throw new Error("Error al eliminar reporte");
     return true;
 };

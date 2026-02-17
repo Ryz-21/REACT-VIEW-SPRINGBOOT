@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import backend.backend.dto.UsuarioRequest;
 import backend.backend.dto.UsuarioResponse;
 import backend.backend.dto.AuthResponse;
-import backend.backend.dto.ErrorResponse;
 import backend.backend.model.Usuario;
 import backend.backend.repository.UsuarioRepository;
 
@@ -25,6 +24,9 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     /**
      * Convierte un Usuario a UsuarioResponse DTO
      */
@@ -33,11 +35,10 @@ public class AuthService {
             return null;
         }
         return new UsuarioResponse(
-            usuario.getIdUsuario(),
-            usuario.getUsername(),
-            usuario.getRol().name(),
-            usuario.getEmail()
-        );
+                usuario.getIdUsuario(),
+                usuario.getUsername(),
+                usuario.getRol().name(),
+                usuario.getEmail());
     }
 
     /**
@@ -49,13 +50,13 @@ public class AuthService {
         }
 
         Optional<Usuario> usuario = usuarioRepository.findByEmail(email);
-        
+
         if (usuario.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
 
         Usuario user = usuario.get();
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("Contraseña incorrecta");
         }
 
@@ -63,10 +64,9 @@ public class AuthService {
         UsuarioResponse usuarioResponse = usuarioToResponse(user);
 
         return new AuthResponse(
-            token,
-            "Login exitoso. Bienvenido, " + user.getUsername(),
-            usuarioResponse
-        );
+                token,
+                "Login exitoso. Bienvenido, " + user.getUsername(),
+                usuarioResponse);
     }
 
     /**
@@ -93,10 +93,10 @@ public class AuthService {
             throw new IllegalArgumentException("El nombre de usuario ya está en uso");
         }
 
-        Usuario nuevoUsuario = Usuario.builder()
+        Usuario nuevoUsuario = Usuario.builder() // Encriptando contraseña
                 .username(username)
                 .email(email)
-                .password(password)
+                .password(passwordEncoder.encode(password))
                 .rol(Usuario.Rol.USER)
                 .build();
 
@@ -104,10 +104,9 @@ public class AuthService {
         UsuarioResponse usuarioResponse = usuarioToResponse(usuarioGuardado);
 
         return new AuthResponse(
-            null,
-            "Usuario registrado con éxito",
-            usuarioResponse
-        );
+                null,
+                "Usuario registrado con éxito",
+                usuarioResponse);
     }
 
     /**
@@ -143,11 +142,10 @@ public class AuthService {
 
         // Enviar correo con el código
         emailService.enviarCorreo(
-            email,
-            "Código de recuperación de contraseña",
-            "Hola " + user.getUsername() + ",\n\nTu código de recuperación es: " + verificationCode +
-            "\n\nEste código expira en 10 minutos."
-        );
+                email,
+                "Código de recuperación de contraseña",
+                "Hola " + user.getUsername() + ",\n\nTu código de recuperación es: " + verificationCode +
+                        "\n\nEste código expira en 10 minutos.");
     }
 
     /**
@@ -172,7 +170,7 @@ public class AuthService {
             throw new IllegalArgumentException("Token expirado");
         }
 
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
         user.setResetTokenExpiration(null);
         usuarioRepository.save(user);
@@ -201,7 +199,7 @@ public class AuthService {
             throw new IllegalArgumentException("El código ha expirado");
         }
 
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetToken(null);
         user.setResetTokenExpiration(null);
         usuarioRepository.save(user);
@@ -220,11 +218,11 @@ public class AuthService {
         Usuario usuario;
         if (usuarioExistente.isEmpty()) {
             usuario = Usuario.builder()
-                .username(name)
-                .email(email)
-                .password("oauth2")
-                .rol(Usuario.Rol.USER)
-                .build();
+                    .username(name)
+                    .email(email)
+                    .password("oauth2")
+                    .rol(Usuario.Rol.USER)
+                    .build();
             usuario = usuarioRepository.save(usuario);
         } else {
             usuario = usuarioExistente.get();
@@ -233,9 +231,8 @@ public class AuthService {
         String token = jwtService.generateToken(usuario.getUsername(), usuario.getEmail());
 
         return new AuthResponse(
-            token,
-            "Login exitoso. Bienvenido, " + usuario.getUsername(),
-            usuarioToResponse(usuario)
-        );
+                token,
+                "Login exitoso. Bienvenido, " + usuario.getUsername(),
+                usuarioToResponse(usuario));
     }
 }
